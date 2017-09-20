@@ -27,7 +27,7 @@ int main(int argc, char **argv, char**envp){
         str = waitForUserCommand();                // Get input command
         myargs = tokenize(str, ' ');               // Generate token vector
         
-        if(*str != '\0'){
+        if(myargs[0] != '\0'){
             rc = fork();
             if (rc < 0) {                                  
                 fprintf(stderr, "Error: fork() failed\n");
@@ -36,19 +36,19 @@ int main(int argc, char **argv, char**envp){
                 path = getPathEnvironment(envp);           // what happens when the program end with path?
                 program = strconc("/", myargs[0]);
                 while(*path){
-                free(myargs[0]);
-                myargs[0] = strconc(*path, program);            // path/program
-                retVal = execve(myargs[0], myargs, envp);
-                path++;
+                    free(myargs[0]);
+                    myargs[0] = strconc(*path, program);            // path/program
+                    retVal = execve(myargs[0], myargs, envp);
+                    path++;
                 }
-                printf("Error: Command was not found \n");
-                exit(0);                                   // Just terminate child if a command was not found
+                exit(1); 
             } else {                                       // parent goes down this path (original process)
-                int wc = wait(NULL);
-                printf("%d \n", wc);
+                status = 0;
+                int wc = wait(&status);
+                if(WIFEXITED(status))
+                    printf("%d \n", WEXITSTATUS(status));
             }
-        }else
-            printf("NOTHING \n");                   // remember to remove this else; 
+        }
         free(str);                                
         freeVector(myargs);
     }
