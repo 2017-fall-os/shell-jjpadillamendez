@@ -66,6 +66,20 @@ char *strconc(char *str, char *str2){
     return newstr;
     
 }
+char *copystr(char *str){
+    int len, i;
+    char *cpstr; 
+   
+    len = strlen2(str);
+    cpstr = (char *)malloc(len + 1);
+    for(i=0; i < len; i++){
+        cpstr[i] = str[i];
+    }
+    cpstr[i] = '\0';
+    
+    return cpstr;
+    
+}
 
 
 

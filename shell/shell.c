@@ -27,26 +27,30 @@ int main(int argc, char **argv, char**envp){
         str = waitForUserCommand();                // Get input command
         myargs = tokenize(str, ' ');               // Generate token vector
         
-        if(myargs[0] != '\0'){
+        if(myargs[0] != '\0'){                     // empty commands should do nothing
             rc = fork();
             if (rc < 0) {                                  
                 fprintf(stderr, "Error: fork() failed\n");
                 exit(1);
-            } else if (rc == 0) {                        // Run child process
-                path = getPathEnvironment(envp);           // what happens when the program end with path?
+            } 
+            else if(rc == 0) {                                // Run child process
+                path = getPathEnvironment(envp);         
                 program = strconc("/", myargs[0]);
                 while(*path){
                     free(myargs[0]);
-                    myargs[0] = strconc(*path, program);            // path/program
-                    retVal = execve(myargs[0], myargs, envp);
+                    myargs[0] = strconc(*path, program);         // Run path/program        printf("%s \n", myargs[0]);
+                    execve(myargs[0], myargs, envp);
                     path++;
                 }
-                exit(1); 
+                printf("Error: Command was not found \n");
+                exit(0); 
             } else {                                       // parent goes down this path (original process)
                 status = 0;
                 int wc = wait(&status);
-                if(WIFEXITED(status))
-                    printf("%d \n", WEXITSTATUS(status));
+                if(! WIFEXITED(status))
+                    printf("Program does not termined normally with exit or _exit \n");
+                else if(WEXITSTATUS(status) != 0)
+                    printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
             }
         }
         free(str);                                
@@ -88,18 +92,29 @@ void freeVector(char **tokenVec){
     
 }
 char **getPathEnvironment(char **envp){
-    char **tenvp, **tokenVec, **pathVec;
+    char **tenvp, **tokenVec, **pathVec, **pwdVec;
+    char *path, *pwd, *tpwd, *cmbpath;
     tenvp = envp;
     while(*tenvp){
         tokenVec = tokenize(*tenvp, '=');
         if(strcomp(*tokenVec, "PATH")){
-            pathVec = tokenize(tokenVec[1], ':');
-            freeVector(tokenVec);
-            break;
+            path = copystr(tokenVec[1]);                    // "Assumed it is form such as PATH=string"
+        }else if(strcomp(*tokenVec, "PWD")){
+            pwd = copystr(tokenVec[1]);
         }
         freeVector(tokenVec);
         tenvp++;
     }
+    tpwd = strconc(pwd, ":");                               //"PWD:"
+    free(pwd);
+    
+    cmbpath = strconc(tpwd, path);                         // "PWD:PATH"
+    free(tpwd);
+    free(path);
+    
+    pathVec = tokenize(cmbpath, ':');
+    free(cmbpath);
+    
     return pathVec;
     
 }

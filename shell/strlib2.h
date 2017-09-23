@@ -15,4 +15,6 @@ int strcomp(char *str, char *str2);
 
 char *strconc(char *str, char *str2);
 
+char *copystr(char *str);
+
 #endif 
