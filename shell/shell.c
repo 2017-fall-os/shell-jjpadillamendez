@@ -44,7 +44,7 @@ int main(int argc, char **argv, char**envp){
                     execve(myargs[0], myargs, envp);
                     path++;
                 }
-                printf("Error: Command was not found\n");
+                printf("%s ,,,, Error: Command was not found\n", myargs[0]);
                 exit(0); 
             } else {                                       // parent goes down this path (original process)
                 status = 0;
