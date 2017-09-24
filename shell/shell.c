@@ -1,10 +1,9 @@
-/****************************************************/
-/* Lab Assignment 1: Tokenizer   Date: 09/10/2017   */
-/* Author: Jesus Padilla    Class: Operating System */
-/* Prof: Dr. Freudenthal    TA: Adrian Veliz        */
-/* This class implements a user interface used to   */
-/* test a tokenizer program.                        */
-/****************************************************/
+/********************************************************************/
+/* Shell: Lab Assignment 2, Part 1         Date: 09/10/2017         */
+/* Author: Jesus Padilla                   Class: Operating System  */
+/* Prof: Dr. Freudenthal                   TA: Adrian Veliz         */
+/* This program implements a shell which executes simple commands   */
+/********************************************************************/
 #include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +19,7 @@
 int main(int argc, char **argv, char**envp){
 	
     char **myargs, **path;
-    char *str, *program;
+    char *str, *program, *error;
     int rc, status, retVal;
     
     while(1){
@@ -42,13 +41,13 @@ int main(int argc, char **argv, char**envp){
                     execve(myargs[0], myargs, envp);
                     path++;
                 }
-                printf("Error: Command was not found \n");
+                printf("Error: Command was not found\n");
                 exit(0); 
             } else {                                       // parent goes down this path (original process)
                 status = 0;
                 int wc = wait(&status);
                 if(! WIFEXITED(status))
-                    printf("Program does not termined normally with exit or _exit \n");
+                    printf("Program does not terminate normally with exit or _exit \n");
                 else if(WEXITSTATUS(status) != 0)
                     printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
             }
@@ -65,19 +64,20 @@ int main(int argc, char **argv, char**envp){
 char *waitForUserCommand(){    
     int len;
     char *str = (char *)malloc(BUFFERLIMIT);
-    //char *ps = getenv("PS1");
-    //write(1, ps, strlen2(ps)+1);                           // Read user input
     
     write(1, "$ ", 2);
     len = read(0, str, BUFFERLIMIT);
-    assert2(len < BUFFERLIMIT, "Limit of string length was overpassed");              
+    assert2(len < BUFFERLIMIT, "Limit of string length was overpassed");    
+    
+    if(len == 0) 
+        exit(0);
     
     rmCharIn(str, '\n');                         // Remove new line char, replace it for '\0'
     str = (char *)realloc(str, len);
-    
-    if(strcomp(str, "exit"))
+
+    if(strcomp(str, "exit")) 
         exit(0);
-        
+    
     return str;
     
 }

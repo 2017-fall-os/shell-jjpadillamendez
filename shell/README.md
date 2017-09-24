@@ -1,15 +1,17 @@
 
 
-# Tokenizer - Project 1 - Jesus Padilla #
+# Shell - Part 1 - Project 2 - Jesus Padilla #
 
 This directory contains:
+* shell.c: implements a shell that uses execve to run simple commands with arguments
 * mytoc.c: implements an algorithm that splits a string into tokens, everytime it finds a specified
   delimiter.
-* test.c: implements a user interface in which a user can type any string to use/test this tokenizer program.
 * strlib2.c: provides our own string library. This library includes some procedures such as:
     - strlen2(*char): which counts the number of characthers in a given string
     - strcomp(*char, *char): which compares two strings and returns 1 if they are equal; otherwise returns 0
     - rmCharIn(*char,char): which removes the given char at the first index that appears in the string
+    - strconc(*char, *char): concatenates two strings
+    - copystr(*char): returns a new freshly-allocated copied string
 
 To compile:
 ~~~
@@ -18,7 +20,7 @@ $ make all
 
 To run it, try:
 ~~~
-$ ./lab1
+$ ./shell
 ~~~
 
 To exit from the program:
@@ -31,14 +33,16 @@ To delete generated files:
 $ make clean
 ~~~
 
-The following test cases were taken from the Operating System website to demonstrate the robustness of this tokenizer.
+The following test cases were run to debug this shell
 
       Test Cases:
-            "Hello my dog's name is Darwin."
-            "     Hello   World!    "
-            ""
-            "          "
-            " HelloWorld"
+            $ ls
+            $ ls ..
+            $ mkdir tempDir
+            $ cat shell.h
+            $ make clean
+            $ fakecommand
+            
             
 The following screenshot displays the output of the program after running these test cases.
 
