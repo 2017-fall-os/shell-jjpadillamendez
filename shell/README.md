@@ -3,7 +3,7 @@
 # Shell - Part 1 - Project 2 - Jesus Padilla #
 
 This directory contains:
-* shell.c: implements a shell that uses execve to run simple commands with arguments
+* shell.c: implements a shell that creates a child process that runs simple commands with their arguments
 * mytoc.c: implements an algorithm that splits a string into tokens, everytime it finds a specified
   delimiter.
 * strlib2.c: provides our own string library. This library includes some procedures such as:
@@ -46,25 +46,21 @@ The following test cases were run to debug this shell
             
 The following screenshot displays the output of the program after running these test cases.
 
-![Alt text](https://github.com/2017-fall-os/tokenizer-lab-f17-jjpadillamendez/blob/master/tokenizer/testcases.jpg?raw=true)
+![Alt text](https://github.com/2017-fall-os/shell-jjpadillamendez/blob/master/shell/testcases.jpg?raw=true)
 
 How to used this program:
-    1. First, the program asks for specifying a delimiter:
-       ... - Enter "y", to accept change the default delimiter, which is an space [' ']
-       ... - Enter "n", to avoid this and use the default delimiter
-       ... - Any other input is rejected
-    2. (Optional) after accepting to change the delimiter, the program asks for the new one
-       ... - Enter the new delimiter, which is a single characther. Any other input is rejected.
-    3. Second, this step is a loop in which the program prints a prompt "$"
-       ... - Enter any string, and the program will output the result as vector of string
-    Note: At any step, enter "exit" to quit the program
-    
+     <br />1. After running the program named 'shell', the user can type any simple command and the shell
+            will create a child process; which runs the command using execve.
+         <br />- Note: simple pipes, background tasks, and cd are still not implemented
+     <br />2. At any moment, the user can type 'exit' to stop this shell
+        
 Important Note: 
-...This program considers continuos delimiters as a single delimiter. Similarly, delimiters that are at the beginning or at the end of a given string are ignored. For example, the following two strings are considered as similar strings.
+ <br />If an absolute path is not specified, this shell will try to find it by default. First, it checks at the working directory and then, it tries to find the path using the $PATH environment variable.
+ <br />The tokenizer, which is embedded in this shell, considers continuos delimiters as a single delimiter. Similarly, delimiters that are at the beginning or at the end of a given string are ignored. For example, the following two strings are considered as similar strings.
     
-                    - "      Hello     World!      "
-                    - "Hello World!"
+                    - "      ls     ..      "
+                    - "ls .."
                     
-...The limit of characthers in each input string is 100. However, this length can be easily increased at the code level inside test.c, in which there is a constant variable named "BUFFERLIMIT".
-...Finally, the file assert2.c was borrowed from Dr. Freudenthal, which adds the feature of adding an error message to the traditional assert method.
+ <br />The limit of characthers in each input command is 100 characthers. Nevertheless, this length can be easily increased at the code level inside shell.c, in which there is a macro named "BUFFERLIMIT".
+ <br />Finally, the file assert2.c was borrowed from Dr. Freudenthal, which adds the feature of adding an error message to the traditional assert method.
     
