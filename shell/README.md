@@ -55,12 +55,12 @@ How to used this program:
      <br />2. At any moment, the user can type 'exit' to stop this shell
         
 Important Note: 
- <br />If an absolute path is not specified, this shell will try to find it by default. First, it checks at the working directory and then, it tries to find the path using the $PATH environment variable.
- <br />The tokenizer, which is embedded in this shell, considers continuos delimiters as a single delimiter. Similarly, delimiters that are at the beginning or at the end of a given string are ignored. For example, the following two strings are considered as similar strings.
+ <br />- If an absolute path is not specified, this shell will try to find it by default. First, it checks at the working directory and then, it tries to find the path using the $PATH environment variable.
+ <br />- The tokenizer, which is embedded in this shell, considers continuos delimiters as a single delimiter. Similarly, delimiters that are at the beginning or at the end of a given string are ignored. For example, the following two strings are considered as similar strings.
     
                     - "      ls     ..      "
                     - "ls .."
                     
- <br />The limit of characthers in each input command is 100 characthers. Nevertheless, this length can be easily increased at the code level inside shell.c, in which there is a macro named "BUFFERLIMIT".
- <br />Finally, the file assert2.c was borrowed from Dr. Freudenthal, which adds the feature of adding an error message to the traditional assert method.
+ <br />- The limit of characthers in each input command is 100 characthers. Nevertheless, this length can be easily increased at the code level inside shell.c, in which there is a macro named "BUFFERLIMIT".
+ <br />- Finally, the file assert2.c was borrowed from Dr. Freudenthal, which adds the feature of adding an error message to the traditional assert method.
     
