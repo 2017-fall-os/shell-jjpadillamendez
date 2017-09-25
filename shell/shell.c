@@ -20,42 +20,43 @@
 int main(int argc, char **argv, char**envp){
 	
     char **myargs, **path;
-    char *str, *program;
-    int rc, status;
-  
+    char **commandVec, *program;
+    int rc, status, i;
+
     while(1){
-        str = waitForUserCommand();                // Get input command
-        myargs = tokenize(str, ' ');               // Generate token vector
-        
-        if(myargs[0] != '\0'){                     // empty commands should do nothing
-            rc = fork();
-            if (rc < 0) {                                  
-                fprintf(stderr, "Error: fork() failed\n");
-                exit(1);
-            } 
-            else if(rc == 0) {                                  // child process
-                execve(myargs[0], myargs, envp);                // Run command as it was inputted     
-                        
-                path = getPathEnvironment(envp);                // If execve returns, than check path environment
-                program = strconc("/", myargs[0]);
-                while(*path){
-                    free(myargs[0]);
-                    myargs[0] = strconc(*path, program);        // Run path/program        printf("%s \n", myargs[0]);
-                    execve(myargs[0], myargs, envp);
-                    path++;
+        commandVec = waitForUserCommand();                // Get input command
+        for(i=0; commandVec[i]; i++){
+            myargs = tokenize(commandVec[i], ' ');                  // Generate token vector
+            if(myargs[0] != '\0'){                                  // empty commands should do nothing
+                rc = fork();
+                if (rc < 0) {                                  
+                    fprintf(stderr, "Error: fork() failed\n");
+                    exit(1);
+                } 
+                else if(rc == 0) {                                  // child process
+                    execve(myargs[0], myargs, envp);                // Run command as it was inputted     
+                            
+                    path = getPathEnvironment(envp);                // If execve returns, than check path environment
+                    program = strconc("/", myargs[0]);
+                    while(*path){
+                        free(myargs[0]);
+                        myargs[0] = strconc(*path, program);        // Run path/program        printf("%s \n", myargs[0]);
+                        execve(myargs[0], myargs, envp);
+                        path++;
+                    }
+                    printf("Error: Command was not found \n");
+                    exit(0); 
+                } else {                                       // parent goes down this path (original process)
+                    status = 0;
+                    int wc = wait(&status);
+                    if(! WIFEXITED(status))
+                        printf("Program does not terminate normally with exit or _exit \n");
+                    else if(WEXITSTATUS(status) != 0)
+                        printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
                 }
-                printf("%s ,,,, Error: Command was not found\n", myargs[0]);
-                exit(0); 
-            } else {                                       // parent goes down this path (original process)
-                status = 0;
-                int wc = wait(&status);
-                if(! WIFEXITED(status))
-                    printf("Program does not terminate normally with exit or _exit \n");
-                else if(WEXITSTATUS(status) != 0)
-                    printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
             }
         }
-        free(str);                                
+        freeVector(commandVec);
         freeVector(myargs);
     }
    
@@ -64,9 +65,10 @@ int main(int argc, char **argv, char**envp){
 }
 /** Returns an string which contains the input of the user
  */
-char *waitForUserCommand(){    
+char **waitForUserCommand(){    
     int len;
     char *str = (char *)malloc(BUFFERLIMIT);
+    char **commandVec;
     
     write(2, "$ ", 2);
     len = read(0, str, BUFFERLIMIT);
@@ -75,13 +77,14 @@ char *waitForUserCommand(){
     if(len == 0) 
         exit(0);
     
-    rmCharIn(str, '\n');                         // Remove new line char, replace it for '\0'
-    str = (char *)realloc(str, len);
+    str = (char *)realloc(str, len+1);
 
-    if(strcomp(str, "exit")) 
+    if(strcomp(str, "exit\n")) 
         exit(0);
     
-    return str;
+    commandVec = tokenize(str, '\n');
+    
+    return commandVec;
     
 }
 /** Free the given vector of strings. First, it frees each string

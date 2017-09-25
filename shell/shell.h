@@ -9,7 +9,7 @@
 
 void freeVector(char **tokenVec);
 
-char *waitForUserCommand();
+char **waitForUserCommand();
 
 char askForDelimit();
 
