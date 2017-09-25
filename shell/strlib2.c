@@ -18,16 +18,6 @@ int strlen2(char *str){
     
 }
 
-/* Removes chToRm and the tail after it of the given string
- */
-void rmCharIn(char *str, char chToRm){
-    int i=0;
-    while(str[i] != chToRm && str[i] != '\0')
-        i++;
-    str[i] = 0;
-    
-}
-
 /* Compares two strings and returns whether they are equal 
  * or not. [equal = 1, not equal = 0]
  */
@@ -66,22 +56,6 @@ char *strconc(char *str, char *str2){
     return newstr;
     
 }
-char *copystr(char *str){
-    int len, i;
-    char *cpstr; 
-   
-    len = strlen2(str);
-    cpstr = (char *)malloc(len + 1);
-    for(i=0; i < len; i++){
-        cpstr[i] = str[i];
-    }
-    cpstr[i] = '\0';
-    
-    return cpstr;
-    
-}
-
-
 
 
 

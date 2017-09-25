@@ -55,15 +55,16 @@ int main(int argc, char **argv, char**envp){
                         printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
                 }
             }
+            freeVector(myargs);
         }
         freeVector(commandVec);
-        freeVector(myargs);
+       
     }
-   
     return 0;
 	
 }
-/** Returns an string which contains the input of the user
+/** Returns a vector in which each entry contains a command
+ *  from the user
  */
 char **waitForUserCommand(){    
     int len;
@@ -74,16 +75,17 @@ char **waitForUserCommand(){
     len = read(0, str, BUFFERLIMIT);
     assert2(len < BUFFERLIMIT, "Limit of string length was overpassed");    
     
-    if(len == 0) 
+    if(len == 0)            // EOF also exits the program
         exit(0);
     
-    str = (char *)realloc(str, len+1);
-
+    str[len] = '\0';        // make sure there is a '\0' at the end
+    
     if(strcomp(str, "exit\n")) 
         exit(0);
     
-    commandVec = tokenize(str, '\n');
+    commandVec = tokenize(str, '\n');        
     
+    free(str);
     return commandVec;
     
 }
@@ -97,13 +99,16 @@ void freeVector(char **tokenVec){
     free(tokenVec);
     
 }
+/** Returns a vector contaning all the path in the $PATH
+ *  environment variable
+ */
 char **getPathEnvironment(char **envp){
     char **tenvp, **tokenVec, **pathVec;
     tenvp = envp;
     while(*tenvp){
         tokenVec = tokenize(*tenvp, '=');
         if(strcomp(*tokenVec, "PATH")){
-            pathVec = tokenize(tokenVec[1], ':');
+            pathVec = tokenize(tokenVec[1], ':');  
             freeVector(tokenVec);
             break;
         }

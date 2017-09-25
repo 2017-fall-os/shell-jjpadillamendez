@@ -9,9 +9,7 @@ This directory contains:
 * strlib2.c: provides our own string library. This library includes some procedures such as:
     - strlen2(*char): which counts the number of characthers in a given string
     - strcomp(*char, *char): which compares two strings and returns 1 if they are equal; otherwise returns 0
-    - rmCharIn(*char,char): which removes the given char at the first index that appears in the string
     - strconc(*char, *char): concatenates two strings
-    - copystr(*char): returns a new freshly-allocated copied string
 
 To compile:
 ~~~

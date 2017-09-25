@@ -9,12 +9,8 @@
 
 int strlen2(char *str);
 
-void rmCharIn(char *str, char chToRm);
-
 int strcomp(char *str, char *str2);
 
 char *strconc(char *str, char *str2);
-
-char *copystr(char *str);
 
 #endif 
