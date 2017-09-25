@@ -12,7 +12,6 @@
 #include "mytoc.h"
 #include "shell.h"
 #include "strlib2.h"
-#include <unistd.h>
 
 #define BUFFERLIMIT 102                             // Include space for '/n' and '/0'
 
@@ -26,27 +25,28 @@ int main(int argc, char **argv, char**envp){
     while(1){
         commandVec = waitForUserCommand();                // Get input command
         for(i=0; commandVec[i]; i++){
-            myargs = tokenize(commandVec[i], ' ');                  // Generate token vector
+            myargs = tokenize(commandVec[i], ' ');                  // Generate command arguments vector
             if(myargs[0] != '\0'){                                  // empty commands should do nothing
                 rc = fork();
                 if (rc < 0) {                                  
                     fprintf(stderr, "Error: fork() failed\n");
                     exit(1);
                 } 
-                else if(rc == 0) {                                  // child process
-                    execve(myargs[0], myargs, envp);                // Run command as it was inputted     
+                else if(rc == 0) {                                  // CHILD PROCESS 
+                    execve(myargs[0], myargs, envp);                // Run command as it is ..     
                             
-                    path = getPathEnvironment(envp);                // If execve returns, than check path environment
+                    path = getPathEnvironment(envp);                // .. If previous execve returns, than check path environment
                     program = strconc("/", myargs[0]);
                     while(*path){
                         free(myargs[0]);
-                        myargs[0] = strconc(*path, program);        // Run path/program        printf("%s \n", myargs[0]);
+                        myargs[0] = strconc(*path, program);        // Run path/program        
                         execve(myargs[0], myargs, envp);
                         path++;
                     }
                     printf("Error: Command was not found \n");
-                    exit(0); 
-                } else {                                       // parent goes down this path (original process)
+                    exit(0);                                        // based on my point of view, a command not found should return 0
+                } 
+                else {                                              // parent goes down this path (original process)
                     status = 0;
                     int wc = wait(&status);
                     if(! WIFEXITED(status))
@@ -99,14 +99,14 @@ void freeVector(char **tokenVec){
     free(tokenVec);
     
 }
-/** Returns a vector contaning all the path in the $PATH
+/** Returns a vector contaning all the paths in the $PATH
  *  environment variable
  */
 char **getPathEnvironment(char **envp){
     char **tenvp, **tokenVec, **pathVec;
     tenvp = envp;
     while(*tenvp){
-        tokenVec = tokenize(*tenvp, '=');
+        tokenVec = tokenize(*tenvp, '=');           // tokenize each envr variable to check before '='
         if(strcomp(*tokenVec, "PATH")){
             pathVec = tokenize(tokenVec[1], ':');  
             freeVector(tokenVec);

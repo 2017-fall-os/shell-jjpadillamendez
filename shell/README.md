@@ -9,7 +9,7 @@ This directory contains:
 * strlib2.c: provides our own string library. This library includes some procedures such as:
     - strlen2(*char): which counts the number of characthers in a given string
     - strcomp(*char, *char): which compares two strings and returns 1 if they are equal; otherwise returns 0
-    - strconc(*char, *char): concatenates two strings
+    - strconc(*char, *char): returns a new freshly-allocated string which is the concatenation of two given strings
 
 To compile:
 ~~~
@@ -31,7 +31,12 @@ To delete generated files:
 $ make clean
 ~~~
 
-The following test cases were run to debug this shell
+To test this shell
+~~~
+$ ./testShell.sh ./shell
+~~~
+
+The following additional test cases were run to debug this shell
 
       Test Cases:
             $ ls
@@ -46,7 +51,7 @@ The following screenshot displays the output of the program after running these 
 
 ![Alt text](https://github.com/2017-fall-os/shell-jjpadillamendez/blob/master/shell/testcases.jpg?raw=true)
 
-How to used this program:
+How to use this program:
      <br />1. After running the program named 'shell', the user can type any simple command and the shell
             will create a child process; which runs the command using execve.
          <br />- Note: simple pipes, background tasks, and cd are still not implemented

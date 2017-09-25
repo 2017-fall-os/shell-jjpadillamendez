@@ -1,10 +1,10 @@
-/****************************************************/
-/* Lab Assignment 1: Tokenizer   Date: 09/10/2017   */
-/* Author: Jesus Padilla    Class: Operating System */
-/* Prof: Dr. Freudenthal    TA: Adrian Veliz        */
-/* This class implements a tokenizer, which given   */
-/* a string, splits it into tokens                  */
-/****************************************************/
+/********************************************************************/
+/* Shell: Lab Assignment 2, Part 1         Date: 09/10/2017         */
+/* Author: Jesus Padilla                   Class: Operating System  */
+/* Prof: Dr. Freudenthal                   TA: Adrian Veliz         */
+/* This class implements a tokenizer, which given a string,         */
+/* splits it into tokens                                            */
+/********************************************************************/
 #include <stdio.h>
 #include <stdlib.h>
 #include "mytoc.h"

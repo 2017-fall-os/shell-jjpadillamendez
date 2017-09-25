@@ -1,10 +1,10 @@
-/****************************************************/
-/* Lab Assignment 1: Tokenizer   Date: 09/10/2017   */
-/* Author: Jesus Padilla    Class: Operating System */
-/* Prof: Dr. Freudenthal    TA: Adrian Veliz        */
-/* This class implements a string library, which    */
-/* includes useful procedures to manage strings     */
-/****************************************************/
+/********************************************************************/
+/* Shell: Lab Assignment 2, Part 1         Date: 09/10/2017         */
+/* Author: Jesus Padilla                   Class: Operating System  */
+/* Prof: Dr. Freudenthal                   TA: Adrian Veliz         */
+/* This class implements a string library, which includes useful    */
+/* procedures to manage strings                                     */
+/********************************************************************/
 #include "strlib2.h"
 #include <stdlib.h>
 
@@ -39,6 +39,9 @@ int strcomp(char *str, char *str2){
     return areEqual;
     
 }
+/** Returns a new freshly-allocated string which is the concatenation of
+ *  the given two strings
+ */
 char *strconc(char *str, char *str2){
     int len, len2, i, j;
     char *newstr;
@@ -50,7 +53,7 @@ char *strconc(char *str, char *str2){
     for(i=0; i < len; i++)
         newstr[i] = str[i];
     for(j=0; j < len2; j++)          
-        newstr[i+j] = str2[j];         // i+j to overwrite at no previous indexs    
+        newstr[i+j] = str2[j];         // i+j to overwrite no previous indexs    
     newstr[i+j] = '\0';
     
     return newstr;
