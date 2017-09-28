@@ -9,18 +9,12 @@
 
 void freeVector(char **tokenVec);
 
+int vectorLength(char **vector);
+
 char **waitForUserCommand();
 
 char askForDelimit();
 
 char **getPathEnvironment(char **envp);
-
-int vectorLength(char **vector);
-
-void **initPipe(int *pipeFds);
-
-void closePipe(int *pipeFds);
-
-void updatePipe(int **pipeFds, int pipeNum);
 
 #endif 
