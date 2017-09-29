@@ -12,6 +12,7 @@
 #include "mytoc.h"
 #include "shell.h"
 #include "strlib2.h"
+#include "pipeLib.h"
 
 #define BUFFERLIMIT 102                             // Include space for '/n' and '/0'
 
@@ -19,65 +20,71 @@
 int main(int argc, char **argv, char**envp){
 	  
     char **myargs, **path, **pipeVec;
-    char **commandVec, *program;
-    int *pfds1 = (int *)calloc(2, sizeof(int)), *pfds2[2];
-    int rc, status, i, j, pipeLen;
-
+    char **commandVec, *program, **bgTaskVec;
+    int rc, status, pipeLen, bgTaskLen;
+    int *pfds_prev, *pfds_next;
+    int bgChild;
+    
     while(1){
         commandVec = waitForUserCommand();                // Get input command
-        for(i=0; commandVec[i]; i++){
-            pipeVec = tokenize(commandVec[i], '|');
-            pipeLen = vectorLength(pipeVec);
-           // if(pipeLen > 1){
-                pipe(pfds1);
-           // }
-            for(j=0; pipeVec[j]; j++){
-                myargs = tokenize(pipeVec[j], ' ');                  // Generate command arguments vector
-                if(myargs[0] != '\0'){                                  // empty commands should do nothing
-                    rc = fork();
-                    if (rc < 0) {                                  
-                        fprintf(stderr, "Error: fork() failed\n");
-                        exit(1);
-                    } 
-                    else if(rc == 0) {                                  // CHILD PROCESS 
-                        if(j==0){
-                            close(1);
-                            dup(pfds1[1]);
-                            close(pfds1[0]); close(pfds1[1]);
+        for(int i=0; commandVec[i]; i++){
+            bgTaskVec = tokenize(strconc(commandVec[i], " "), '&');
+            bgTaskLen = vectorLength(bgTaskVec);
+            for(int k=0; bgTaskVec[k]; k++){
+                pipeVec = tokenize(bgTaskVec[k], '|');
+                pipeLen = vectorLength(pipeVec);
+                for(int j=0; pipeVec[j]; j++){
+                    myargs = tokenize(pipeVec[j], ' ');                    // Generate command arguments vector
+                    if(myargs[0] != '\0'){                                 // empty commands should do nothing
+                        if(pipeLen > 1){
+                            if(j != 0){
+                                pfds_prev = pfds_next;                             // ready to take input from pipe
+                            }
+                            if(j != pipeLen-1){                                 // syntax error when pipelen > 1 and myargs[0]
+                                pfds_next = (int *)calloc(2, sizeof(int));
+                                pipe(pfds_next);
+                            }
                         }
-                        if(j==1){
-                            close(0);
-                            dup(pfds1[0]);
-                            close(pfds1[0]); close(pfds1[1]);
+                        rc = fork();
+                        if (rc < 0) {                                  
+                            fprintf(stderr, "Error: fork() failed\n");
+                            exit(1);
+                        } 
+                        else if(rc == 0) {                                  // CHILD PROCESS 
+                            connectChildToPipe(pfds_prev, pfds_next, j, pipeLen);                       
+                            execve(myargs[0], myargs, envp);                // Run command as it is ..     
+                                    
+                            path = getPathEnvironment(envp);                // .. If previous execve returns, than check path environment
+                            program = strconc("/", myargs[0]);
+                            while(*path){
+                                free(myargs[0]);
+                                myargs[0] = strconc(*path, program);        // Run path/program        
+                                execve(myargs[0], myargs, envp);
+                                path++;
+                            }
+                            printf("Error: Command was not found \n");
+                            exit(0);                                        // based on my point of view, a command not found should return 0
+                        } 
+                        else{
+                            closeParentPipe(pfds_prev, j, pipeLen);          // parent goes down this path (original process)
+                            if(bgTaskLen < 2){              // vector is length 2 or higher when & was typed
+                                status = 0;
+                                int wc = wait(&status);
+                                if(! WIFEXITED(status))
+                                    printf("Program: %d does not terminate normally with exit or _exit \n", wc);
+                                else if(WEXITSTATUS(status) != 0)
+                                    printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
+                            }else{
+                                bgTaskLen--; 
+                               // printf("Background Program id: %d \n", rc);
+                            }
                         }
-                        
-                        execve(myargs[0], myargs, envp);                // Run command as it is ..     
-                                
-                        path = getPathEnvironment(envp);                // .. If previous execve returns, than check path environment
-                        program = strconc("/", myargs[0]);
-                        while(*path){
-                            free(myargs[0]);
-                            myargs[0] = strconc(*path, program);        // Run path/program        
-                            execve(myargs[0], myargs, envp);
-                            path++;
-                        }
-                        printf("Error: Command was not found \n");
-                        exit(0);                                        // based on my point of view, a command not found should return 0
-                    } 
-//                     else {                                              // parent goes down this path (original process)
-//                         status = 0;
-//                         int wc = wait(&status);
-//                         if(! WIFEXITED(status))
-//                             printf("Program does not terminate normally with exit or _exit \n");
-//                         else if(WEXITSTATUS(status) != 0)
-//                             printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
-//                     }
+                    }
+                    freeVector(myargs);
                 }
             }
-            close(pfds1[0]); close(pfds1[1]);
-            while(wait(&status) != -1);
-           // waitpid(-1, NULL, 0);
-            freeVector(myargs);
+            freeVector(bgTaskVec);
+            free(pipeVec); // change this
         }
         freeVector(commandVec);
        
@@ -93,7 +100,7 @@ char **waitForUserCommand(){
     char *str = (char *)malloc(BUFFERLIMIT);
     char **commandVec;
     
-    write(1, "$ ", 2);
+    write(2, "$ ", 2);
     len = read(0, str, BUFFERLIMIT);
     assert2(len < BUFFERLIMIT, "Limit of string length was overpassed");    
     
@@ -148,8 +155,18 @@ char **getPathEnvironment(char **envp){
     return pathVec;
     
 }
+//                 else{       // then myargs[0] == 0
+//                         printf("Error: Pipe syntax error \n");
+//                         // handle this error
+//                         exit(0);
+//                 }
 
 
-
-
-    
+ //                     else {                                              // parent goes down this path (original process)
+//                         status = 0;
+//                         int wc = wait(&status);
+//                         if(! WIFEXITED(status))
+//                             printf("Program does not terminate normally with exit or _exit \n");
+//                         else if(WEXITSTATUS(status) != 0)
+//                             printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
+//                     }  
