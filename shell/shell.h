@@ -17,4 +17,8 @@ char askForDelimit();
 
 char **getPathEnvironment(char **envp);
 
+int redirectInput(char *command);
+
+int redirectOutput(char *command);
+
 #endif 

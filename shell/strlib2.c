@@ -8,6 +8,21 @@
 #include "strlib2.h"
 #include <stdlib.h>
 
+char *rmCharAt(char *str, char ch){
+    char *newstr;
+    for(int i=0; str[i]; i++){
+        if(str[i] == ch){
+            newstr = (char *)malloc(strlen2(str));
+            for(int j=0; str[j]; j++){
+                if(j != i)
+                    newstr[j] = str[j];
+            }
+            newstr[j] = '\0';
+            break;
+        }
+    }
+    
+}
 /* Return the number of characters in the given string
  */
 int strlen2(char *str){

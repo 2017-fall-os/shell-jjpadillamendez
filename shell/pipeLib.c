@@ -4,27 +4,43 @@
 #include <unistd.h>
  
  
-#define FIRST_IN_LINE 0
-#define LAST_IN_LINE pipeLen-1   
+#define FIRST_PROCESS 0
+#define LAST_PROCESS pipeLen-1   
 
-int *connectChildToPipe(int *pfds_prev, int *pfds_next, int pipe_, int pipeLen){
-    if(pipeLen > 1){
-        if(pipe_ != FIRST_IN_LINE){
-            close(0);
+#define STDOUT 1
+#define STDIN 0
+
+int *connectToInputPipe(int *pfds_prev, int pipe_, int pipeLen){
+    if(pipeLen > 1 && pipe_ != FIRST_PROCESS){
+            close(STDIN);
             dup(pfds_prev[0]);
             close(pfds_prev[0]); close(pfds_prev[1]); 
-        }
-        if(pipe_ != LAST_IN_LINE){                                 // syntax error when pipelen > 1 and myargs[0]
-            close(1);
-            dup(pfds_next[1]);
-            close(pfds_next[0]); close(pfds_next[1]);
-        }
+    
     }  
     
 }
-
+int *connectToOutputPipe(int *pfds_next, int pipe_, int pipeLen){
+    if(pipeLen > 1 && pipe_ != LAST_PROCESS){           // syntax error when pipelen > 1 and myargs[0]
+            close(STDOUT);
+            dup(pfds_next[1]);
+            close(pfds_next[0]); close(pfds_next[1]);
+    }  
+    
+}
+void closeOutputPipe(int *pfds_next, int pipe_, int pipeLen){
+    if(pipeLen > 1 && pipe_ != LAST_PROCESS){
+        close(pfds_next[0]); close(pfds_next[1]); 
+    }
+        
+}
+void closeInputPipe(int *pfds_prev, int pipe_, int pipeLen){
+    if(pipeLen > 1 && pipe_ != FIRST_PROCESS){
+        close(pfds_prev[0]); close(pfds_prev[1]); 
+    }
+        
+}
 void closeParentPipe(int *pfds_prev, int pipe_, int pipeLen){
-    if(pipeLen > 1 && pipe_ != FIRST_IN_LINE){
+    if(pipeLen > 1 && pipe_ != FIRST_PROCESS){
         close(pfds_prev[0]); close(pfds_prev[1]); 
         free(pfds_prev);
     }

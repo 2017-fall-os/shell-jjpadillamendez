@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "assert2.h"
 #include "mytoc.h"
 #include "shell.h"
@@ -15,12 +16,13 @@
 #include "pipeLib.h"
 
 #define BUFFERLIMIT 102                             // Include space for '/n' and '/0'
-
+#define STDOUT 1
+#define STDIN  0
 
 int main(int argc, char **argv, char**envp){
 	  
     char **myargs, **path, **pipeVec;
-    char **commandVec, *program, **bgTaskVec;
+    char **commandVec, *program, **bgTaskVec, **redirectVec;
     int rc, status, pipeLen, bgTaskLen;
     int *pfds_prev, *pfds_next;
     int bgChild;
@@ -34,7 +36,13 @@ int main(int argc, char **argv, char**envp){
                 pipeVec = tokenize(bgTaskVec[k], '|');
                 pipeLen = vectorLength(pipeVec);
                 for(int j=0; pipeVec[j]; j++){
-                    myargs = tokenize(pipeVec[j], ' ');                    // Generate command arguments vector
+                    if(redirectOutput){
+                        myargs = tokenize(rmCharAt(pipeVec[j], '>'), ' ');
+                    }else if(redirectInput[pipeVec[j]){
+                        myargs = tokenize(rmCharAt(pipeVec[j], '<'), ' ');
+                    }else{
+                        myargs = tokenize(pipeVec[j], ' ');                    // Generate command arguments vector
+                    }
                     if(myargs[0] != '\0'){                                 // empty commands should do nothing
                         if(pipeLen > 1){
                             if(j != 0){
@@ -51,7 +59,19 @@ int main(int argc, char **argv, char**envp){
                             exit(1);
                         } 
                         else if(rc == 0) {                                  // CHILD PROCESS 
-                            connectChildToPipe(pfds_prev, pfds_next, j, pipeLen);                       
+                            // Redirect input to a text file if required
+                            if(!redirectInput(myargs[0])){
+                                connectToInputPipe(pfds_prev, j, pipeLen);         // connect to pipe input otherwise if required
+                            }else{
+                                closeInputPipe(pfds_prev, j, pipeLen);
+                            }
+                            // Redirect output to a text file if required           
+                            if(!redirectOutput(myargs[0])){
+                                connectToOutputPipe(pfds_next, j, pipeLen);         // connect to pipe output otherwise if required
+                            }else{
+                                closeOutputPipe(pfds_next, j, pipeLen);
+                            }
+                            
                             execve(myargs[0], myargs, envp);                // Run command as it is ..     
                                     
                             path = getPathEnvironment(envp);                // .. If previous execve returns, than check path environment
@@ -153,6 +173,28 @@ char **getPathEnvironment(char **envp){
         tenvp++;
     }
     return pathVec;
+    
+}
+int redirectOutput(char *command){
+    char **rdctVec = tokenize(command, '>');
+    int wasRedirected = 0;
+    if(vectorLength(rdctVec) == 2){
+        close(1);                               // (STDOUT_FILENO
+        open(rdctVec[1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);        // line of code taken from the book    
+        wasRedirected = 1;
+    }
+    return wasRedirected;
+    
+}
+int redirectInput(char *command){
+    char **rdctVec = tokenize(command, '<');
+    int wasRedirected = 0;
+    if(vectorLength(rdctVec) == 2){
+        close(0);                               // (STDOUT_FILENO
+        open(rdctVec[1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
+        wasRedirected = 1;
+    }
+    return wasRedirected;
     
 }
 //                 else{       // then myargs[0] == 0
