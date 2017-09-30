@@ -36,13 +36,7 @@ int main(int argc, char **argv, char**envp){
                 pipeVec = tokenize(bgTaskVec[k], '|');
                 pipeLen = vectorLength(pipeVec);
                 for(int j=0; pipeVec[j]; j++){
-                    if(redirectOutput){
-                        myargs = tokenize(rmCharAt(pipeVec[j], '>'), ' ');
-                    }else if(redirectInput[pipeVec[j]){
-                        myargs = tokenize(rmCharAt(pipeVec[j], '<'), ' ');
-                    }else{
-                        myargs = tokenize(pipeVec[j], ' ');                    // Generate command arguments vector
-                    }
+                    myargs = tokenize(pipeVec[j], ' ');                    // Generate command arguments vector
                     if(myargs[0] != '\0'){                                 // empty commands should do nothing
                         if(pipeLen > 1){
                             if(j != 0){
@@ -60,15 +54,17 @@ int main(int argc, char **argv, char**envp){
                         } 
                         else if(rc == 0) {                                  // CHILD PROCESS 
                             // Redirect input to a text file if required
-                            if(!redirectInput(myargs[0])){
+                            if(!redirectInput(myargs)){
                                 connectToInputPipe(pfds_prev, j, pipeLen);         // connect to pipe input otherwise if required
                             }else{
+                                myargs = removeFromVectorAfter(myargs, 1);
                                 closeInputPipe(pfds_prev, j, pipeLen);
                             }
                             // Redirect output to a text file if required           
-                            if(!redirectOutput(myargs[0])){
+                            if(!redirectOutput(myargs)){
                                 connectToOutputPipe(pfds_next, j, pipeLen);         // connect to pipe output otherwise if required
                             }else{
+                                myargs = removeFromVectorAfter(myargs, 1);
                                 closeOutputPipe(pfds_next, j, pipeLen);
                             }
                             
@@ -107,7 +103,7 @@ int main(int argc, char **argv, char**envp){
             free(pipeVec); // change this
         }
         freeVector(commandVec);
-       
+
     }
     return 0;
 	
@@ -175,26 +171,44 @@ char **getPathEnvironment(char **envp){
     return pathVec;
     
 }
-int redirectOutput(char *command){
-    char **rdctVec = tokenize(command, '>');
+int redirectOutput(char **myargs){
     int wasRedirected = 0;
-    if(vectorLength(rdctVec) == 2){
+    if(vectorLength(myargs) == 3 && strcomp(myargs[1], ">")){
         close(1);                               // (STDOUT_FILENO
-        open(rdctVec[1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);        // line of code taken from the book    
+        open(myargs[2], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
         wasRedirected = 1;
     }
     return wasRedirected;
     
 }
-int redirectInput(char *command){
-    char **rdctVec = tokenize(command, '<');
+int redirectInput(char **myargs){
     int wasRedirected = 0;
-    if(vectorLength(rdctVec) == 2){
+    if(vectorLength(myargs) == 3 && strcomp(myargs[1], "<")){
         close(0);                               // (STDOUT_FILENO
-        open(rdctVec[1], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
+        open(myargs[2], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
         wasRedirected = 1;
     }
     return wasRedirected;
+    
+}
+char **removeFromVectorAfter(char **vector, int index){
+    int len, i, j;
+    char **newvector;
+    
+    len = vectorLength(vector);
+    if(index > 0 && index < len){
+        newvector = (char **)calloc(index+1, sizeof(char *));
+        for(i=0; i < index; i++)
+            newvector[i] = copystr(vector[i]);
+//         for(   ; vector[i+1]; i++)
+//             newvector[i] = copystr(vector[i+1]);
+        newvector[i] = (char *)0;
+    }else{
+        newvector = (char **)calloc(1, sizeof(char *));
+        newvector[i] = (char *)0;
+    }
+    free(vector);
+    return newvector;
     
 }
 //                 else{       // then myargs[0] == 0

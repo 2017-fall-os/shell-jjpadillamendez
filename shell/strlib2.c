@@ -7,20 +7,40 @@
 /********************************************************************/
 #include "strlib2.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 char *rmCharAt(char *str, char ch){
     char *newstr;
-    for(int i=0; str[i]; i++){
-        if(str[i] == ch){
-            newstr = (char *)malloc(strlen2(str));
-            for(int j=0; str[j]; j++){
-                if(j != i)
-                    newstr[j] = str[j];
-            }
-            newstr[j] = '\0';
-            break;
+    int i, j;
+    for(i=0; str[i] && str[i] != ch; i++)
+        ;
+ 
+    if(str[i]){
+        newstr = (char *)malloc(strlen2(str));
+        for(j=0; j < i; j++){
+            printf("%c \n", str[i]);
+            newstr[j] = str[j];
         }
+        for( ; str[j+1]; j++){
+            newstr[j] = str[j+1];
+        }
+        newstr[j] = '\0';
+    }else{
+        newstr = copystr(str);
     }
+    return newstr;
+    
+}
+char *copystr(char *str){
+    char *str2;
+    int i;
+    
+    str2  = (char *)malloc(strlen2(str) + 1);
+    for(i=0; str[i]; i++)
+        str2[i] = str[i];
+    str2[i] = '\0';
+    
+    return str2;
     
 }
 /* Return the number of characters in the given string

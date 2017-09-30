@@ -17,8 +17,10 @@ char askForDelimit();
 
 char **getPathEnvironment(char **envp);
 
-int redirectInput(char *command);
+int redirectInput(char **myargs);
 
-int redirectOutput(char *command);
+int redirectOutput(char **myargs);
+
+char **removeFromVectorAfter(char **vector, int index);
 
 #endif 
