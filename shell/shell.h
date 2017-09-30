@@ -25,4 +25,10 @@ char **removeFromVectorAfter(char **vector, int index);
 
 char **removeFromVector(char **vector, int index);
 
+char **tokenizeAndCheckSyntax(char *str, char delimer, int syntax_case);
+
+void executeChild(char **myargs, char **envp);
+
+int fork2();
+
 #endif 

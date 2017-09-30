@@ -9,6 +9,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+int countCharAt(char *str, char ch){
+    int count, i;
+    
+    count = 0;
+    for(i=0; str[i]; i++){
+        if(str[i] == ch){
+            count++;
+        }
+    }
+    
+    return count;
+    
+}
 char *rmCharAt(char *str, char ch){
     char *newstr;
     int i, j;
@@ -92,6 +105,25 @@ char *strconc(char *str, char *str2){
     newstr[i+j] = '\0';
     
     return newstr;
+    
+}
+
+int isEmpty(char *str){
+    int empty, i;
+    
+    i = 0;
+    empty = 1;
+    
+    if(str[i] != '\0'){
+        for( ; str[i]; i++){
+            if(str[i] != ' '){
+                empty = 0;
+                break;
+            }
+        }        
+    }
+    
+    return empty;
     
 }
 
