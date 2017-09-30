@@ -23,4 +23,6 @@ int redirectOutput(char **myargs);
 
 char **removeFromVectorAfter(char **vector, int index);
 
+char **removeFromVector(char **vector, int index);
+
 #endif 

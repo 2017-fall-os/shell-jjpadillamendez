@@ -185,7 +185,7 @@ int redirectInput(char **myargs){
     int wasRedirected = 0;
     if(vectorLength(myargs) == 3 && strcomp(myargs[1], "<")){
         close(0);                               // (STDOUT_FILENO
-        open(myargs[2], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
+        open(myargs[2], O_RDONLY);
         wasRedirected = 1;
     }
     return wasRedirected;
