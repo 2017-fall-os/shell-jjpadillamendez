@@ -40,7 +40,7 @@ int main(int argc, char **argv, char**envp){
                             pipeLen = vectorLength(pipeVec);
                             for(int j=0; pipeVec[j]; j++){
                                 myargs = tokenize(pipeVec[j], ' ');                    // Generate command arguments vector
-                                if(myargs[0]){                              // como remover esto
+                                if(myargs[0] && !isChangeDirRequested(myargs)){                              // como remover esto
                                     initPipe(j, pipeLen);                   // Init pipe just if needed
                                     rc = fork2();
                                     if(rc == 0) {                                  // CHILD PROCESS 
@@ -126,7 +126,7 @@ void executeChild(char **myargs, char **envp){
     char *program, **path;
     
     execve(myargs[0], myargs, envp);                // Run command as it is ..     
-                                                
+                                            
     path = getPathEnvironment(envp);                // .. If previous execve returns, than check path environment
     program = strconc("/", myargs[0]);
     while(*path){
@@ -137,7 +137,20 @@ void executeChild(char **myargs, char **envp){
     }
     printf("Error: Command was not found \n");
     exit(0);
+    
 
+}
+int isChangeDirRequested(char **myargs){
+    int retval;
+    if(strcomp(myargs[0], "cd")){
+        if(chdir(myargs[1]) < 0)                // Other arguments are ignored
+            printf("Error: specified absolute or relative path does not exit. \n");
+        retval = 1;
+    }else{
+        retval = 0;
+    }
+    return retval;
+    
 }
 int fork2(){
     int rc;

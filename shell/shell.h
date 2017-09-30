@@ -31,4 +31,6 @@ void executeChild(char **myargs, char **envp);
 
 int fork2();
 
+int isChangeDirRequested(char **myargs);
+
 #endif 
