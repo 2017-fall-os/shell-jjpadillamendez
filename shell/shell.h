@@ -7,23 +7,13 @@
 #ifndef shell		// prevent multiple inclusion
 #define shell
 
-void freeVector(char **tokenVec);
-
-int vectorLength(char **vector);
-
 char **waitForUserCommand();
-
-char askForDelimit();
 
 char **getPathEnvironment(char **envp);
 
 int redirectInput(char **myargs);
 
 int redirectOutput(char **myargs);
-
-char **removeFromVectorAfter(char **vector, int index);
-
-char **removeFromVector(char **vector, int index);
 
 char **tokenizeAndCheckSyntax(char *str, char delimer, int syntax_case);
 

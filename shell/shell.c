@@ -9,11 +9,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+
 #include "assert2.h"
 #include "mytoc.h"
 #include "shell.h"
 #include "strlib2.h"
 #include "pipeLib.h"
+#include "vectorLib.h"
 
 #define BUFFERLIMIT 102                             // Include space for '/n' and '/0'
 #define STDOUT 1
@@ -30,64 +32,60 @@ int main(int argc, char **argv, char**envp){
     while(1){
         commandVec = waitForUserCommand();                // Get input command
         for(int i=0; commandVec[i]; i++){
-            if(!isEmpty(commandVec[i])){                  // empty commands should do nothing
-                bgTaskVec = tokenizeAndCheckSyntax(commandVec[i], '&', CASE1);
-                if(bgTaskVec){
-                    bgTaskLen = vectorLength(bgTaskVec);
-                    for(int k=0; bgTaskVec[k]; k++){
-                        pipeVec = tokenizeAndCheckSyntax(bgTaskVec[k], '|', CASE2);
-                        if(pipeVec){
-                            pipeLen = vectorLength(pipeVec);
-                            for(int j=0; pipeVec[j]; j++){
-                                myargs = tokenize(pipeVec[j], ' ');                    // Generate command arguments vector
-                                if(myargs[0] && !isChangeDirRequested(myargs)){                              // como remover esto
-                                    initPipe(j, pipeLen);                   // Init pipe just if needed
-                                    rc = fork2();
-                                    if(rc == 0) {                                  // CHILD PROCESS 
-                                        // Redirect input to a text file if required
-                                        if(!redirectInput(myargs)){
-                                            connectToInputPipe(j, pipeLen);         // connect to pipe input otherwise if required
-                                        }else{
-                                            myargs = removeFromVectorAfter(myargs, 1);
-                                            closeInputPipe(j, pipeLen);
-                                        }
-                                        // Redirect output to a text file if required           
-                                        if(!redirectOutput(myargs)){
-                                            connectToOutputPipe(j, pipeLen);         // connect to pipe output otherwise if required
-                                        }else{
-                                            myargs = removeFromVectorAfter(myargs, 1);
-                                            closeOutputPipe(j, pipeLen);
-                                        }
-                                        executeChild(myargs, envp);                                    // based on my point of view, a command not found should return 0
-                                        
-                                    } 
-                                    else{
-                                        closeParentPipe(j, pipeLen);          // parent goes down this path (original process)
-                                        if(bgTaskLen < 2){              // vector is length 2 or higher when & was typed
-                                            status = 0;
-                                            int wc = waitpid(rc, &status, 0);
-                                            if(! WIFEXITED(status))
-                                                printf("Program: %d does not terminate normally with exit or _exit \n", wc);
-                                            else if(WEXITSTATUS(status) != 0)
-                                                printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
-                                        }else{
-                                            bgTaskLen--;
-                                        }
+            if(bgTaskVec = tokenizeAndCheckSyntax(commandVec[i], '&', CASE1)){
+                bgTaskLen = vectorLength(bgTaskVec);
+                for(int k=0; bgTaskVec[k]; k++){
+                    if(pipeVec = tokenizeAndCheckSyntax(bgTaskVec[k], '|', CASE2)){
+                        pipeLen = vectorLength(pipeVec);
+                        for(int j=0; pipeVec[j]; j++){
+                            myargs = tokenize(pipeVec[j], ' ');                    // Generate command arguments vector
+                            if(myargs[0] && !isChangeDirRequested(myargs)){                              // como remover esto
+                                initPipe(j, pipeLen);                   // Init pipe just if needed
+                                rc = fork2();
+                                if(rc == 0) {                                  // CHILD PROCESS 
+                                    // Redirect input to a text file if required
+                                    if(!redirectInput(myargs)){
+                                        connectToInputPipe(j, pipeLen);         // connect to pipe input otherwise if required
+                                    }else{
+                                        myargs = removeFromVectorAfter(myargs, 1);
+                                        closeInputPipe(j, pipeLen);
+                                    }
+                                    // Redirect output to a text file if required           
+                                    if(!redirectOutput(myargs)){
+                                        connectToOutputPipe(j, pipeLen);         // connect to pipe output otherwise if required
+                                    }else{
+                                        myargs = removeFromVectorAfter(myargs, 1);
+                                        closeOutputPipe(j, pipeLen);
+                                    }
+                                    executeChild(myargs, envp);                                    // based on my point of view, a command not found should return 0
+                                    
+                                } 
+                                else{
+                                    closeParentPipe(j, pipeLen);          // parent goes down this path (original process)
+                                    if(bgTaskLen < 2){              // vector is length 2 or higher when & was typed
+                                        status = 0;
+                                        int wc = waitpid(rc, &status, 0);
+                                        if(! WIFEXITED(status))
+                                            printf("Program: %d does not terminate normally with exit or _exit \n", wc);
+                                        else if(WEXITSTATUS(status) != 0)
+                                            printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
+                                    }else{
+                                        bgTaskLen--;
                                     }
                                 }
-                                freeVector(myargs);
                             }
-                        }else{
-                            printf("Syntax Error: near an unexpected token '|' \n");
-                            break;
+                            freeVector(myargs);
                         }
+                    }else{
+                        printf("Syntax Error: near an unexpected token '|' \n");
+                        break;
                     }
-                    freeVector(bgTaskVec);
-                    free(pipeVec); // change this
-                }else{
-                    printf("Syntax Error: near an unexpected token '&' \n");
-                    // break if ; is introduced
                 }
+                freeVector(bgTaskVec);
+                free(pipeVec); // change this
+            }else{
+                printf("Syntax Error: near an unexpected token '&' \n");
+                // break if ; is introduced
             }
         }
         freeVector(commandVec);
@@ -142,11 +140,15 @@ void executeChild(char **myargs, char **envp){
 }
 int isChangeDirRequested(char **myargs){
     int retval;
+    char *args;
     if(strcomp(myargs[0], "cd")){
+//         if(myargs[1] == '\0')               // make this better
+//             chdir("/home/student");
         if(chdir(myargs[1]) < 0)                // Other arguments are ignored
             printf("Error: specified absolute or relative path does not exit. \n");
         retval = 1;
-    }else{
+    }
+    else{
         retval = 0;
     }
     return retval;
@@ -181,24 +183,6 @@ char **getPathEnvironment(char **envp){
     return pathVec;
     
 }
-int vectorLength(char **vector){
-    int cnt=0;
-    for(int i=0; vector[i] != 0; i++){
-        cnt++;
-    }
-    return cnt;
-    
-}
-/** Free the given vector of strings. First, it frees each string
- *  then the empty vector.
- */
-void freeVector(char **tokenVec){
-    for(int i=0; tokenVec[i] != '\0'; i++){
-        free(tokenVec[i]);
-    }
-    free(tokenVec);
-    
-}
 int redirectOutput(char **myargs){
     int wasRedirected = 0;
     if(vectorLength(myargs) == 3 && strcomp(myargs[1], ">")){
@@ -217,26 +201,6 @@ int redirectInput(char **myargs){
         wasRedirected = 1;
     }
     return wasRedirected;
-    
-}
-char **removeFromVectorAfter(char **vector, int index){
-    int len, i, j;
-    char **newvector;
-    
-    len = vectorLength(vector);
-    if(index > 0 && index < len){
-        newvector = (char **)calloc(index+1, sizeof(char *));
-        for(i=0; i < index; i++)
-            newvector[i] = copystr(vector[i]);
-//         for(   ; vector[i+1]; i++)
-//             newvector[i] = copystr(vector[i+1]);
-        newvector[i] = (char *)0;
-    }else{
-        newvector = (char **)calloc(1, sizeof(char *));
-        newvector[i] = (char *)0;
-    }
-    free(vector);
-    return newvector;
     
 }
 char **tokenizeAndCheckSyntax(char *str, char delimer, int case_syntax){

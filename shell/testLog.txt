@@ -26,6 +26,6 @@ PASSED: background
   bash < /tmp/c1 &
  echo 2 
  sleep 3
-FAILED: change dir
+PASSED: change dir
   cd .. 
  pwd
