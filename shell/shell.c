@@ -29,20 +29,20 @@
 int main(int argc, char **argv, char**envp){
 	  
     char **commandVec, **bgTaskVec, **pipeVec, **myargs, **redirectVec;
-    char *expadCommand, *program;
+    char *expadArg, *program;
     int rc, status, pipeLen, bgTaskLen;
         
     while(1){
         commandVec = waitForUserCommand(envp);                                  // Step 1: Read command from the user
         for(int i=0; commandVec[i]; i++){
-            expadCommand = expandEnvrVar(envp, commandVec[i]);                  // Step 1.1: Expand non-embedded and embedded variables that starts with $
-            if(bgTaskVec = tokenizeAndCheckSyntax(expadCommand, '&', CASE1)){   // Step 2: check which jobs are to run in the background
+            if(bgTaskVec = tokenizeAndCheckSyntax(commandVec[i], '&', CASE1)){   // Step 2: check which jobs are to run in the background
                 bgTaskLen = vectorLength(bgTaskVec);        
                 for(int k=0; bgTaskVec[k]; k++){
                     if(pipeVec = tokenizeAndCheckSyntax(bgTaskVec[k], '|', CASE2)){     // Step 3: check if pipes are needed
                         pipeLen = vectorLength(pipeVec);
                         for(int j=0; pipeVec[j]; j++){
-                            myargs = tokenize(pipeVec[j], ' ');                         // Step 4: Separate each process into its arguments
+                            expadArg = expandEnvrVar(envp, pipeVec[j]);                  // Step 3.1: Expand non-embedded and embedded variables that starts with $
+                            myargs = tokenize(expadArg, ' ');                         // Step 4: Separate each process into its arguments
                             if(myargs[0] && !isAnEmbeddedCmd(envp, myargs)){                             
                                 initPipe(j, pipeLen);                                   // Step 4.1: Init pipe just if needed
                                 rc = fork2();
@@ -80,6 +80,7 @@ int main(int argc, char **argv, char**envp){
                                 }
                             }
                             freeVector(myargs);
+                            free(expadArg);
                         }
                     }else{
                         fprintf(stderr, "Syntax Error: near an unexpected token '|' \n");
