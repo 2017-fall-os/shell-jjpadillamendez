@@ -29,7 +29,7 @@ int main(int argc, char **argv, char**envp){
     char **myargs, **path, **pipeVec, *expadCommand;
     char **commandVec, *program, **bgTaskVec, **redirectVec;
     int rc, status, pipeLen, bgTaskLen;
-            
+        
     while(1){
         commandVec = waitForUserCommand(envp);                // Get input command
         for(int i=0; commandVec[i]; i++){

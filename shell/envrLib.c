@@ -132,15 +132,38 @@ char **expandEnvrVar(char **envr, char **myargs){
     return newargs;
 }
 char *expandEnvrVar2(char **envr, char *myarg){
-    int i, j, k, len;
-    char *tstr, *newarg, **argVec;
+    int i, j, k, len, closed;
+    char *tstr, *tstr2, *newarg, **argVec, varlen;
         
     len = 0;
     argVec = tokenize2(myarg, '$');
     for(i=0; argVec[i]; i++){
         if(argVec[i][0] == '\0'){                           // CASE: $ at the beginning
             if(argVec[i+1] && argVec[i+1][0] != '\0'){          // CASE: $HOME
-                len += envrVarLen(envr, argVec[i+1]);
+                if(argVec[i+1][0] == '{'){                          // CASE: when it is embedded
+                    closed = 0;
+                    varlen = 0;
+                    for(j=0; argVec[i+1][j+1]; j++){
+                        if(argVec[i+1][j+1] == '}'){
+                            len += strlen2(&argVec[i+1][j+2]);      // count rest: ${HOME}rest
+                            if(j > 0) closed = 1;
+                            break;
+                        }
+                        varlen++;
+                    }
+                    if(closed){                                    // closed means: ${HOME}
+                        tstr = (char *)malloc(varlen + 1);
+                        for(j=0; j < varlen; j++){
+                            tstr[j] = argVec[i+1][j+1];
+                        }
+                        tstr[j] = '\0';
+                        len += envrVarLen(envr, tstr);
+                        free(tstr);
+                    }
+                }
+                else{
+                    len += envrVarLen(envr, argVec[i+1]);           // Not embedded simple $HOME
+                }
                 i++;
             }
             else{
@@ -164,10 +187,38 @@ char *expandEnvrVar2(char **envr, char *myarg){
     for(i=0; argVec[i]; i++){
         if(argVec[i][0] == '\0'){                           // CASE: $ at the beginning
             if(argVec[i+1] && argVec[i+1][0] != '\0'){          // CASE: $HOME
-                tstr = getEnvrVar2(envr, argVec[i+1]);
-                for(j=0; tstr[j]; j++, k++)
-                    newarg[k] = tstr[j];
-                free(tstr);
+                if(argVec[i+1][0] == '{'){                          // CASE: when it is embedded
+                    closed = 0;
+                    varlen = 0;
+                    for(j=0; argVec[i+1][j+1]; j++){
+                        if(argVec[i+1][j+1] == '}'){
+                            if(j > 0) closed = 1;
+                            break;
+                        }
+                        varlen++;
+                    }
+                    if(closed){                                    // closed means: ${HOME}
+                        tstr2 = (char *)malloc(varlen + 1);
+                        for(j=0; j < varlen; j++){
+                            tstr2[j] = argVec[i+1][j+1];
+                        }
+                        tstr2[j] = '\0';
+                        tstr = getEnvrVar2(envr, tstr2);
+                        for(j=0; tstr[j]; j++, k++)
+                            newarg[k] = tstr[j];
+                        free(tstr);
+                        free(tstr2);
+                        
+                        for(j=0; argVec[i+1][j+2+varlen]; j++, k++)         // Copy the rest
+                            newarg[k] = argVec[i+1][j+2+varlen];
+                    }
+                }
+                else{
+                    tstr = getEnvrVar2(envr, argVec[i+1]);
+                    for(j=0; tstr[j]; j++, k++)
+                        newarg[k] = tstr[j];
+                    free(tstr);
+                }
                 i++;
             }
             else{
