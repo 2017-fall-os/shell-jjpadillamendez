@@ -4,6 +4,8 @@
 #include "vectorLib.h"
 #include "strlib2.h"
 
+/** Returns the length of the given vector
+ */
 int vectorLength(char **vector){
     int cnt=0;
     for(int i=0; vector[i] != 0; i++){
@@ -22,6 +24,8 @@ void freeVector(char **tokenVec){
     free(tokenVec);
     
 } 
+/** Removes everything in the vector after the given index
+ */
 char **removeFromVectorAfter(char **vector, int index){
     int len, i, j;
     char **newvector;
@@ -31,8 +35,6 @@ char **removeFromVectorAfter(char **vector, int index){
         newvector = (char **)calloc(index+1, sizeof(char *));
         for(i=0; i < index; i++)
             newvector[i] = copystr(vector[i]);
-//         for(   ; vector[i+1]; i++)
-//             newvector[i] = copystr(vector[i+1]);
         newvector[i] = (char *)0;
     }else{
         newvector = (char **)calloc(1, sizeof(char *));
@@ -40,22 +42,5 @@ char **removeFromVectorAfter(char **vector, int index){
     }
     free(vector);
     return newvector;
-    
-}
-char **addToVector(char **vector, char *newItem){
-    char **newVector;
-    int vecLen, i;
-    
-    vecLen = vectorLength(vector);
-    newVector = (char **)calloc(vecLen+2, sizeof(char *));
-    
-    for(i=0; i < vecLen; i++){
-        newVector[i] = copystr(vector[i]);                  // Copy content of oldvector
-    }
-    newVector[i] = copystr(newItem);
-    newVector[i+1] = (char *)0;
-    
-    free(newItem);
-    
     
 }

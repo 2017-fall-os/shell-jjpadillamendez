@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/** Count the number of chars at the given string
+ */
 int countCharAt(char *str, char ch){
     int count, i;
     
@@ -22,28 +24,8 @@ int countCharAt(char *str, char ch){
     return count;
     
 }
-char *rmCharAt(char *str, char ch){
-    char *newstr;
-    int i, j;
-    for(i=0; str[i] && str[i] != ch; i++)
-        ;
- 
-    if(str[i]){
-        newstr = (char *)malloc(strlen2(str));
-        for(j=0; j < i; j++){
-            printf("%c \n", str[i]);
-            newstr[j] = str[j];
-        }
-        for( ; str[j+1]; j++){
-            newstr[j] = str[j+1];
-        }
-        newstr[j] = '\0';
-    }else{
-        newstr = copystr(str);
-    }
-    return newstr;
-    
-}
+/** Returns a new-freshly allocated copy of the given string
+ */
 char *copystr(char *str){
     char *str2;
     int i;
@@ -107,7 +89,8 @@ char *strconc(char *str, char *str2){
     return newstr;
     
 }
-
+/** It is considered empty if either it does not contain anything or contain only spaces
+ */
 int isEmpty(char *str){
     int empty, i;
     

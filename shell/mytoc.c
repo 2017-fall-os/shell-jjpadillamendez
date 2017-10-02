@@ -47,6 +47,9 @@ char ** tokenize(char *str, char delim){
    return tokenVec;
    
 }
+/** This tokenize2 does not consider continuos delimers as a single one and
+ *  delimers at the beginning and at the end are also counted
+ */
 char ** tokenize2(char *str, char delim){
     char **tokenVec;
     char *tmpstr;
@@ -136,6 +139,9 @@ int countToks(char *str, char delim){
     return tokNum;
     
 }
+/**
+ * Counte the number of tokens in the given string
+ */
 int countToks2(char *str, char delim){
     int tokNum, i;
     

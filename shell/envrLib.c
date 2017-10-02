@@ -8,6 +8,9 @@
 #include "envrLib.h"
 #include "mytoc.h"
 
+/** Change the content of an environment variable ONLY if it 
+ *  exits. If the given variable does not exit then the command is ignored
+ */
 int setEnvrVar(char **envr, char **myargs){
     int count, argsLen, retVal, len;
     char **argVec;
@@ -16,23 +19,23 @@ int setEnvrVar(char **envr, char **myargs){
     count = countCharAt(myargs[0], '=');
     if(count == 1){                         // CASE: when there is one =
         argsLen = vectorLength(myargs);
-        if(argsLen == 1){
+        if(argsLen == 1){                   // CASE: it must be of the form val=value
             len = strlen2(myargs[0]);
             if(myargs[0][0] == '=' || myargs[0][len-1] == '=')
-                write(2, "Error: environment assignment should be var=value\n", 50);
+                fprintf(stderr, "Error: environment assignment should be var=value\n");
             else{
-                argVec = tokenize(myargs[0], '=');
+                argVec = tokenize(myargs[0], '=');          // = cannot be at the beginning or end
                 if( ! addToEnvrVector(envr, argVec[0], argVec[1]))
-                    write(2, "Error: environment variable was not found\n", 42);
+                    fprintf(stderr, "Error: environment variable was not found\n");
             }
             
         }
-        else{
-            write(2, "Error: environment assignment should be var=value\n", 50);
+        else{                               // JUST argument value=value; no other tokens 
+            fprintf(stderr, "Error: environment assignment should be var=value\n");
         }
     }
     else if(count > 1){
-         write(2, "Error: multiple '=' tokens is not supported\n", 44);
+         fprintf(stderr, "Error: multiple '=' tokens is not supported\n");
     }
     else{
         retVal=0;                          // CASE: there is no =
@@ -40,6 +43,9 @@ int setEnvrVar(char **envr, char **myargs){
     return retVal;
     
 }
+/** Returns the content of a environment variable as a vector
+ *  in which each entry contains anything before ':' in the value
+ */
 char **getEnvrVar(char **envr, char *var){
     char **tokenVec, **varVec;
     int i;
@@ -48,7 +54,7 @@ char **getEnvrVar(char **envr, char *var){
     for(i=0; envr[i]; i++){
         tokenVec = tokenize(envr[i], '=');           // tokenize each envr variable to check before '='
         if(strcomp(*tokenVec, var)){
-            varVec = tokenize(tokenVec[1], ':');  
+            varVec = tokenize(tokenVec[1], ':');     // create environment vector by tokenizing at ':'
             freeVector(tokenVec);
             break;
         }
@@ -62,6 +68,9 @@ char **getEnvrVar(char **envr, char *var){
     return varVec;
     
 }
+/** Returns the content of an environment variable as an string
+ *  the whole value as a string
+ */
 char *getEnvrVar2(char **envr, char *var){
     char **tokenVec, *value;
     int i;
@@ -70,7 +79,7 @@ char *getEnvrVar2(char **envr, char *var){
     for(i=0; envr[i]; i++){
         tokenVec = tokenize(envr[i], '=');           // tokenize each envr variable to check before '='
         if(strcomp(*tokenVec, var)){
-            value = copystr(tokenVec[1]);  
+            value = copystr(tokenVec[1]);            // return whole value as string
             freeVector(tokenVec);
             break;
         }
@@ -83,6 +92,9 @@ char *getEnvrVar2(char **envr, char *var){
     return value;
     
 }
+/** Updates the content of an environment variable given its variable
+ *  name and the new value
+ */
 int addToEnvrVector(char **envr, char *var, char*value){
     char **tokenVec, *temp, *temp2;
     int i;
@@ -91,7 +103,7 @@ int addToEnvrVector(char **envr, char *var, char*value){
         tokenVec = tokenize(envr[i], '=');           // tokenize each envr variable to check before '='
         if(strcomp(*tokenVec, var)){
             temp = strconc(var, "=");
-            envr[i] = strconc(temp, value);  
+            envr[i] = strconc(temp, value);          // var=value
             freeVector(tokenVec);
             free(temp);
             return 1;
@@ -101,6 +113,9 @@ int addToEnvrVector(char **envr, char *var, char*value){
     return 0;
     
 }
+/** Returns the length of the value of an environment variable
+ *  anything after var=
+ */
 int envrVarLen(char **envr, char *var){
     char **tokenVec;
     int i, len;
@@ -118,24 +133,14 @@ int envrVarLen(char **envr, char *var){
     return len;
     
 }
-char **expandEnvrVar(char **envr, char **myargs){
-    int i;
-    char **newargs, *newarg;
-    
-    newargs = (char **)calloc(vectorLength(myargs) + 1, sizeof(char *));
-    for(i=0; myargs[i]; i++){
-        newarg = expandEnvrVar2(envr, myargs[i]);
-        newargs[i] = newarg;
-    }
-    newargs[i] = (char *)0;
-  
-    return newargs;
-}
-char *expandEnvrVar2(char **envr, char *myarg){
+/** Expands the given arguments if its contains non-embedded ($HOME) OR 
+ *  embedded(${HOME}) environment variables
+ */
+char *expandEnvrVar(char **envr, char *myarg){
     int i, j, k, len, closed;
     char *tstr, *tstr2, *newarg, **argVec, varlen;
         
-    len = 0;
+    len = 0;                                                // FIRST COUNT THE LEGTH REQUIRED OF THE NEW EXPANDED STRING
     argVec = tokenize2(myarg, '$');
     for(i=0; argVec[i]; i++){
         if(argVec[i][0] == '\0'){                           // CASE: $ at the beginning
@@ -151,27 +156,27 @@ char *expandEnvrVar2(char **envr, char *myarg){
                         }
                         varlen++;
                     }
-                    if(closed){                                    // closed means: ${HOME}
+                    if(closed){                                     // closed means: ${HOME}
                         tstr = (char *)malloc(varlen + 1);
                         for(j=0; j < varlen; j++){
-                            tstr[j] = argVec[i+1][j+1];
+                            tstr[j] = argVec[i+1][j+1];             // copy value of environment variable
                         }
                         tstr[j] = '\0';
-                        len += envrVarLen(envr, tstr);
+                        len += envrVarLen(envr, tstr);              // then count the length of the environment variable
                         free(tstr);
                     }
                 }
                 else{
-                    len += envrVarLen(envr, argVec[i+1]);           // Not embedded simple $HOME
+                    len += envrVarLen(envr, argVec[i+1]);           // CASE: NOT embedded simple $ANY
                 }
-                i++;
+                i++;                // jump to after $ANY OR ${ANY}
             }
             else{
-                while(argVec[i] && argVec[i][0] == '\0'){      //  CASE: $$$
+                while(argVec[i] && argVec[i][0] == '\0'){          //  CASE: $$$
                     len++;
                     i++;
                 }
-                if(argVec[i])                                          //CASE: $$$HOME
+                if(argVec[i])                                      //CASE: $$$HOME
                     len += strlen2(argVec[i]);
                 else
                     break;
@@ -182,7 +187,7 @@ char *expandEnvrVar2(char **envr, char *myarg){
         }       
     }
     
-    newarg = (char *)malloc(len + 1);
+    newarg = (char *)malloc(len + 1);                           // SECOND: COPY THE CONTENT TO THE NEW EXPANDED VARIABLE
     k = 0;
     for(i=0; argVec[i]; i++){
         if(argVec[i][0] == '\0'){                           // CASE: $ at the beginning
@@ -190,7 +195,7 @@ char *expandEnvrVar2(char **envr, char *myarg){
                 if(argVec[i+1][0] == '{'){                          // CASE: when it is embedded
                     closed = 0;
                     varlen = 0;
-                    for(j=0; argVec[i+1][j+1]; j++){
+                    for(j=0; argVec[i+1][j+1]; j++){                // count again the length of the current envr variable
                         if(argVec[i+1][j+1] == '}'){
                             if(j > 0) closed = 1;
                             break;
@@ -200,26 +205,26 @@ char *expandEnvrVar2(char **envr, char *myarg){
                     if(closed){                                    // closed means: ${HOME}
                         tstr2 = (char *)malloc(varlen + 1);
                         for(j=0; j < varlen; j++){
-                            tstr2[j] = argVec[i+1][j+1];
+                            tstr2[j] = argVec[i+1][j+1];           // Get name of possible envr variable
                         }
                         tstr2[j] = '\0';
-                        tstr = getEnvrVar2(envr, tstr2);
+                        tstr = getEnvrVar2(envr, tstr2);           // Get envr variable VALUE
                         for(j=0; tstr[j]; j++, k++)
-                            newarg[k] = tstr[j];
+                            newarg[k] = tstr[j];                   // copy the content of the value to the expanded string
                         free(tstr);
                         free(tstr2);
                         
-                        for(j=0; argVec[i+1][j+2+varlen]; j++, k++)         // Copy the rest
+                        for(j=0; argVec[i+1][j+2+varlen]; j++, k++)         // Copy the rest   ${HOME}rest
                             newarg[k] = argVec[i+1][j+2+varlen];
                     }
                 }
-                else{
+                else{                                             // CASE: NOT embedded envr variable; simple $HOME
                     tstr = getEnvrVar2(envr, argVec[i+1]);
                     for(j=0; tstr[j]; j++, k++)
                         newarg[k] = tstr[j];
                     free(tstr);
                 }
-                i++;
+                i++;                    // skip variable name
             }
             else{
                 while(argVec[i] && argVec[i][0] == '\0'){      //  CASE: $$$

@@ -1,8 +1,9 @@
 /********************************************************************/
-/* Shell: Lab Assignment 2, Part 1         Date: 09/10/2017         */
+/* Shell: Lab Assignment 2, Part 2         Date: 10/1/2017          */
 /* Author: Jesus Padilla                   Class: Operating System  */
 /* Prof: Dr. Freudenthal                   TA: Adrian Veliz         */
 /* This program implements a shell which executes simple commands   */
+/* and other advances features                                      */
 /********************************************************************/
 #include <sys/wait.h>
 #include <stdio.h>
@@ -19,75 +20,76 @@
 #include "envrLib.h"
 
 #define BUFFERLIMIT 102                             // Include space for '/n' and '/0'
-#define STDOUT 1
-#define STDIN  0
+#define STDOUT 1                                    // standard output
+#define STDIN  0                                    // standard input
+
 #define CASE1 1
 #define CASE2 0
 
 int main(int argc, char **argv, char**envp){
 	  
-    char **myargs, **path, **pipeVec, *expadCommand;
-    char **commandVec, *program, **bgTaskVec, **redirectVec;
+    char **commandVec, **bgTaskVec, **pipeVec, **myargs, **redirectVec;
+    char *expadCommand, *program;
     int rc, status, pipeLen, bgTaskLen;
         
     while(1){
-        commandVec = waitForUserCommand(envp);                // Get input command
+        commandVec = waitForUserCommand(envp);                                  // Step 1: Read command from the user
         for(int i=0; commandVec[i]; i++){
-            expadCommand = expandEnvrVar2(envp, commandVec[i]);
-            if(bgTaskVec = tokenizeAndCheckSyntax(expadCommand, '&', CASE1)){
-                bgTaskLen = vectorLength(bgTaskVec);
+            expadCommand = expandEnvrVar(envp, commandVec[i]);                  // Step 1.1: Expand non-embedded and embedded variables that starts with $
+            if(bgTaskVec = tokenizeAndCheckSyntax(expadCommand, '&', CASE1)){   // Step 2: check which jobs are to run in the background
+                bgTaskLen = vectorLength(bgTaskVec);        
                 for(int k=0; bgTaskVec[k]; k++){
-                    if(pipeVec = tokenizeAndCheckSyntax(bgTaskVec[k], '|', CASE2)){
+                    if(pipeVec = tokenizeAndCheckSyntax(bgTaskVec[k], '|', CASE2)){     // Step 3: check if pipes are needed
                         pipeLen = vectorLength(pipeVec);
                         for(int j=0; pipeVec[j]; j++){
-                            myargs = tokenize(pipeVec[j], ' ');                    // Generate command arguments vector
-                            if(myargs[0] && !isAnEmbeddedCmd(envp, myargs)){                              // como remover esto
-                                initPipe(j, pipeLen);                   // Init pipe just if needed
+                            myargs = tokenize(pipeVec[j], ' ');                         // Step 4: Separate each process into its arguments
+                            if(myargs[0] && !isAnEmbeddedCmd(envp, myargs)){                             
+                                initPipe(j, pipeLen);                                   // Step 4.1: Init pipe just if needed
                                 rc = fork2();
-                                if(rc == 0) {                                  // CHILD PROCESS 
-                                    // Redirect input to a text file if required
+                                if(rc == 0) {                                           // Child process is here
+                                                                                        // Step 5: Redirect I/0 in the child process
                                     if(!redirectInput(myargs)){
-                                        connectToInputPipe(j, pipeLen);         // connect to pipe input otherwise if required
+                                        connectToInputPipe(j, pipeLen);                 // if input redirection to file is required; pipes are closed
                                     }else{
                                         myargs = removeFromVectorAfter(myargs, 1);
                                         closeInputPipe(j, pipeLen);
                                     }
-                                    // Redirect output to a text file if required           
-                                    if(!redirectOutput(myargs)){
-                                        connectToOutputPipe(j, pipeLen);         // connect to pipe output otherwise if required
+                                    if(!redirectOutput(myargs)){                        // if output redirection to file is required; pipes are closed
+                                        connectToOutputPipe(j, pipeLen);         
                                     }else{
                                         myargs = removeFromVectorAfter(myargs, 1);
                                         closeOutputPipe(j, pipeLen);
                                     }
-                                    executeChild(myargs, envp);                                    // based on my point of view, a command not found should return 0
-                                    
+                                    executeChild(myargs, envp);                         // Step 5: Everything is ready, run child process
+
                                 } 
-                                else{
-                                    closeParentPipe(j, pipeLen);          // parent goes down this path (original process)
-                                    if(bgTaskLen < 2){              // vector is length 2 or higher when & was typed
+                                else{                                                   // Parent process (shell) goes down here
+                                    closeParentPipe(j, pipeLen);                        // Close its pipe if it was required by child
+                                    if(bgTaskLen < 2){                                  
                                         status = 0;
-                                        int wc = waitpid(rc, &status, 0);
+                                        int wc = waitpid(rc, &status, 0);               // waiting for child if it is NOT running in the background
                                         if(! WIFEXITED(status))
-                                            printf("Program: %d does not terminate normally with exit or _exit \n", wc);
-                                        else if(WEXITSTATUS(status) != 0)
-                                            printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
+                                            fprintf(stderr, "Program: %d does not terminate normally with exit or _exit \n", wc);
+                                        else if(WEXITSTATUS(status) != 0){
+                                            fprintf(stderr, "Program terminated with exit code %d \n", WEXITSTATUS(status));
+                                            break;
+                                        }
                                     }else{
-                                        bgTaskLen--;
+                                        bgTaskLen--;                                    // bgTaskLen is the sum of the background jobs; decrease after completion
                                     }
                                 }
                             }
                             freeVector(myargs);
                         }
                     }else{
-                        printf("Syntax Error: near an unexpected token '|' \n");
+                        fprintf(stderr, "Syntax Error: near an unexpected token '|' \n");
                         break;
                     }
                 }
                 freeVector(bgTaskVec);
-                free(pipeVec); // change this
+                freeVector(pipeVec); 
             }else{
-                printf("Syntax Error: near an unexpected token '&' \n");
-                // break if ; is introduced
+                fprintf(stderr, "Syntax Error: near an unexpected token '&' \n");
             }
         }
         freeVector(commandVec);
@@ -122,6 +124,10 @@ char **waitForUserCommand(char **envp){
     return commandVec;
     
 }
+/**
+ * executes a child process given the arguments which contains the new program
+ * and its parameters; additionally, a environment variables are required
+ */
 void executeChild(char **myargs, char **envp){
     char *program, **path;
     
@@ -135,18 +141,21 @@ void executeChild(char **myargs, char **envp){
         execve(myargs[0], myargs, envp);
         path++;
     }
-    printf("Error: Command was not found \n");
-    exit(0);
+    fprintf(stderr, "Error: Command was not found\n");          // execve only returns on upon an error
+    exit(2);
     
 }
+/** Change directory (cd) command is implemented in this shell
+ *  it is NOT implemented in a child process
+ */
 int isChangeDir(char **envp, char **myargs){
     int retval;
     char *args;
     if(strcomp(myargs[0], "cd")){
-        if(myargs[1] == '\0')               // make this better
+        if(myargs[1] == '\0')                   // if no arguments are provided, go to HOME by default
              myargs[1] = getEnvrVar2(envp, "HOME");
         if(chdir(myargs[1]) < 0)                // Other arguments are ignored
-            printf("Error: specified absolute or relative path does not exit. \n");
+            fprintf(stderr, "Error: specified absolute or relative path does not exit.\n");
         retval = 1;
     }
     else{
@@ -155,6 +164,9 @@ int isChangeDir(char **envp, char **myargs){
     return retval;
     
 }
+/** The same fork; just in this method is included the possible 
+ *  error message
+ */
 int fork2(){
     int rc;
     rc = fork();
@@ -165,38 +177,51 @@ int fork2(){
     return rc;
     
 }
+/** Check if the given command is an embedded command of the shell
+ *  in which case; it is not needed to create a child process
+ */
 int isAnEmbeddedCmd(char **envp, char **myargs){
     if(isChangeDir(envp, myargs) || setEnvrVar(envp, myargs))
         return 1;
     else
         return 0;
 }
+/** Redirect the standard output to a given file '>' if requested
+ *  otherwise it does not do anything and returns 0
+ */
 int redirectOutput(char **myargs){
     int wasRedirected = 0;
     if(vectorLength(myargs) == 3 && strcomp(myargs[1], ">")){
-        close(1);                               // (STDOUT_FILENO
+        close(STDOUT);                               // (STDOUT_FILENO
         open(myargs[2], O_CREAT|O_WRONLY|O_TRUNC, S_IRWXU);
         wasRedirected = 1;
     }
     return wasRedirected;
     
 }
+/** Redirect the standard output to a given file '>' if requested
+ *  otherwise it does not do anything
+ */
 int redirectInput(char **myargs){
     int wasRedirected = 0;
     if(vectorLength(myargs) == 3 && strcomp(myargs[1], "<")){
-        close(0);                               // (STDOUT_FILENO
+        close(STDIN);                               
         open(myargs[2], O_RDONLY);
         wasRedirected = 1;
     }
     return wasRedirected;
     
 }
+/** Tokenize and checks that the given command is in the correct syntax
+ *  case 1: when we have something like cmd & cmd & in which only to the left is required a cmd
+ *  case 0: when we have cmd | cmd | cmd in which we need to both sides always a cmd
+ */
 char **tokenizeAndCheckSyntax(char *str, char delimer, int case_syntax){
     int delimLen, vectorLen, i, k;
     char *tempstr, *tempstr2, **tokenVec;
     char error = 0, *msg;
     
-    delimLen = countCharAt(str, delimer);
+    delimLen = countCharAt(str, delimer);           // count number of delimers in the string
     
     if(delimLen > 0){
         tempstr2 = strconc(" ", str);
@@ -204,9 +229,9 @@ char **tokenizeAndCheckSyntax(char *str, char delimer, int case_syntax){
         tokenVec = tokenize(tempstr, delimer);
         
         if(delimLen == vectorLength(tokenVec)-1){
-            k = (case_syntax) ? 0 : 1;
+            k = (case_syntax) ? 0 : 1;             // Selecting which case we need
             for(i=0; i < delimLen + k; i++){        
-                if(isEmpty(tokenVec[i])){
+                if(isEmpty(tokenVec[i])){          
                     error = 1;
                     break;
                 }
