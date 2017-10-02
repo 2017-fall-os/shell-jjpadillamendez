@@ -7,7 +7,7 @@
 #ifndef shell		// prevent multiple inclusion
 #define shell
 
-char **waitForUserCommand();
+char **waitForUserCommand(char **envp);
 
 char **getPathEnvironment(char **envp);
 
@@ -21,6 +21,8 @@ void executeChild(char **myargs, char **envp);
 
 int fork2();
 
-int isChangeDirRequested(char **myargs);
+int isChangeDir(char **envp, char **myargs);
+
+int isAnEmbeddedCmd(char **envp, char **myargs);
 
 #endif 

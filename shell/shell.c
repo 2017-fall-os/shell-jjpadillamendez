@@ -16,6 +16,7 @@
 #include "strlib2.h"
 #include "pipeLib.h"
 #include "vectorLib.h"
+#include "envrLib.h"
 
 #define BUFFERLIMIT 102                             // Include space for '/n' and '/0'
 #define STDOUT 1
@@ -25,21 +26,22 @@
 
 int main(int argc, char **argv, char**envp){
 	  
-    char **myargs, **path, **pipeVec;
+    char **myargs, **path, **pipeVec, *expadCommand;
     char **commandVec, *program, **bgTaskVec, **redirectVec;
     int rc, status, pipeLen, bgTaskLen;
-    
+            
     while(1){
-        commandVec = waitForUserCommand();                // Get input command
+        commandVec = waitForUserCommand(envp);                // Get input command
         for(int i=0; commandVec[i]; i++){
-            if(bgTaskVec = tokenizeAndCheckSyntax(commandVec[i], '&', CASE1)){
+            expadCommand = expandEnvrVar2(envp, commandVec[i]);
+            if(bgTaskVec = tokenizeAndCheckSyntax(expadCommand, '&', CASE1)){
                 bgTaskLen = vectorLength(bgTaskVec);
                 for(int k=0; bgTaskVec[k]; k++){
                     if(pipeVec = tokenizeAndCheckSyntax(bgTaskVec[k], '|', CASE2)){
                         pipeLen = vectorLength(pipeVec);
                         for(int j=0; pipeVec[j]; j++){
                             myargs = tokenize(pipeVec[j], ' ');                    // Generate command arguments vector
-                            if(myargs[0] && !isChangeDirRequested(myargs)){                              // como remover esto
+                            if(myargs[0] && !isAnEmbeddedCmd(envp, myargs)){                              // como remover esto
                                 initPipe(j, pipeLen);                   // Init pipe just if needed
                                 rc = fork2();
                                 if(rc == 0) {                                  // CHILD PROCESS 
@@ -92,16 +94,16 @@ int main(int argc, char **argv, char**envp){
 
     }
     return 0;
-	
+    
 }
 /** Returns a vector in which each entry contains a command
  *  from the user
  */
-char **waitForUserCommand(){    
+char **waitForUserCommand(char **envp){    
     int len;
     char *str = (char *)malloc(BUFFERLIMIT);
     char **commandVec;
-    
+
     write(2, "$ ", 2);
     len = read(0, str, BUFFERLIMIT);
     assert2(len < BUFFERLIMIT, "Limit of string length was overpassed");    
@@ -125,25 +127,24 @@ void executeChild(char **myargs, char **envp){
     
     execve(myargs[0], myargs, envp);                // Run command as it is ..     
                                             
-    path = getPathEnvironment(envp);                // .. If previous execve returns, than check path environment
+    path = getEnvrVar(envp, "PATH");                // .. If previous execve returns, than check path environment
     program = strconc("/", myargs[0]);
     while(*path){
         free(myargs[0]);
-        myargs[0] = strconc(*path, program);        // Run path/program        
+        myargs[0] = strconc(*path, program);        // Run path/program    
         execve(myargs[0], myargs, envp);
         path++;
     }
     printf("Error: Command was not found \n");
     exit(0);
     
-
 }
-int isChangeDirRequested(char **myargs){
+int isChangeDir(char **envp, char **myargs){
     int retval;
     char *args;
     if(strcomp(myargs[0], "cd")){
-//         if(myargs[1] == '\0')               // make this better
-//             chdir("/home/student");
+        if(myargs[1] == '\0')               // make this better
+             myargs[1] = getEnvrVar2(envp, "HOME");
         if(chdir(myargs[1]) < 0)                // Other arguments are ignored
             printf("Error: specified absolute or relative path does not exit. \n");
         retval = 1;
@@ -164,24 +165,11 @@ int fork2(){
     return rc;
     
 }
-/** Returns a vector contaning all the paths in the $PATH
- *  environment variable
- */
-char **getPathEnvironment(char **envp){
-    char **tenvp, **tokenVec, **pathVec;
-    tenvp = envp;
-    while(*tenvp){
-        tokenVec = tokenize(*tenvp, '=');           // tokenize each envr variable to check before '='
-        if(strcomp(*tokenVec, "PATH")){
-            pathVec = tokenize(tokenVec[1], ':');  
-            freeVector(tokenVec);
-            break;
-        }
-        freeVector(tokenVec);
-        tenvp++;
-    }
-    return pathVec;
-    
+int isAnEmbeddedCmd(char **envp, char **myargs){
+    if(isChangeDir(envp, myargs) || setEnvrVar(envp, myargs))
+        return 1;
+    else
+        return 0;
 }
 int redirectOutput(char **myargs){
     int wasRedirected = 0;
@@ -241,13 +229,3 @@ char **tokenizeAndCheckSyntax(char *str, char delimer, int case_syntax){
     return tokenVec;
     
 }
-
-
- //                     else {                                              // parent goes down this path (original process)
-//                         status = 0;
-//                         int wc = wait(&status);
-//                         if(! WIFEXITED(status))
-//                             printf("Program does not terminate normally with exit or _exit \n");
-//                         else if(WEXITSTATUS(status) != 0)
-//                             printf("Program terminated with exit code %d \n", WEXITSTATUS(status));
-//                     }  

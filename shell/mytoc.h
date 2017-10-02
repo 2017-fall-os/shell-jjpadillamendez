@@ -8,11 +8,15 @@
 #define mytoc
 
 
-char ** tokenize(char *str, char delim);
+char **tokenize(char *str, char delim);
 
-char * headAfter(char *str, char delim);
+char **tokenize2(char *str, char delim);
+
+char *headAfter(char *str, char delim);
 
 int countToks(char *str, char delim);
+
+int countToks2(char *str, char delim);
 
 int countTokLen(char *str, char delim);
 

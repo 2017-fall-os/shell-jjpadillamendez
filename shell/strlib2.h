@@ -21,4 +21,6 @@ char *copystr(char *str);
 
 int isEmpty(char *str);
 
+int addToEnvrVector(char **envr, char *var, char*value);
+
 #endif 
