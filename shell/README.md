@@ -44,116 +44,118 @@ $ ./testShell.sh ./shell
 TEST CASES FOR EACH REQUIRED FEATURED
   
 Required Features For The Assigment
-1. Simple commands (e.g. $ /bin/ls or $ ls )<br />
- 
-$ ls ..<br />
-LICENSE  README.md  shell  shellLabDemos<br />
-$ /bin/ls<br />
-assert2.h  envrLib.h  mytoc.c  pipeLib.c  README.md  shell.h    strlib2.h    testShell.sh  vectorLib.h<br />
-envrLib.c  Makefile   mytoc.h  pipeLib.h  shell.c    strlib2.c  testLog.txt  vectorLib.c<br />
-$ echo my name is Jesus<br />
-my name is Jesus<br />
-$ wc assert2.h<br />
- 12  50 362 assert2.h<br />
-$ exit<br />
+1. Simple commands (e.g. $ /bin/ls or $ ls )
+  ~~~
+  $ ls ..
+  LICENSE  README.md  shell  shellLabDemos
+  $ /bin/ls
+  assert2.h  envrLib.h  mytoc.c  pipeLib.c  README.md  shell.h    strlib2.h    testShell.sh  vectorLib.h
+  envrLib.c  Makefile   mytoc.h  pipeLib.h  shell.c    strlib2.c  testLog.txt  vectorLib.c
+  $ echo my name is Jesus
+  my name is Jesus
+  $ wc assert2.h
+    12  50 362 assert2.h
+  $ exit
+  ~~~
 
 2. Simple pipes (e.g. $ /bin/ls | /bin/sort -r)
-
-$ ls | wc<br />
-     24      24     234<br />
-$ ls | sort | wc<br />
-     24      24     234<br />
-$ ls .. | sort | cat<br />
-LICENSE<br />
-README.md<br />
-shell<br />
-shellLabDemos<br />
-$ ls .. | cat | sort | wc<br />
-      4       4      38<br />
-$ exit<br />
-
+  ~~~
+  $ ls | wc
+       24      24     234
+  $ ls | sort | wc
+       24      24     234
+  $ ls .. | sort | cat
+  LICENSE
+  README.md
+  shell
+  shellLabDemos
+  $ ls .. | cat | sort | wc
+        4       4      38
+  $ exit
+  ~~~
 3. Background tasks (e.g. $ find /etc -print & )
+  ~~~
+  $ ls | wc & wc mytoc.c
+       24      24     234           <- waits for wc mytoc.c
+   164  628 5755 mytoc.c
+  $ ls | wc & wc mytoc.c &          <- It does not wait for mytoc.c
+   164  628 5755 mytoc.c
+  $      24      24     234
 
-$ ls | wc & wc mytoc.c<br />
-     24      24     234           <- waits for wc mytoc.c<br />
- 164  628 5755 mytoc.c<br />
-$ ls | wc & wc mytoc.c &          <- It does not wait for mytoc.c<br />
- 164  628 5755 mytoc.c<br />
-$      24      24     234<br /><br />
-
-$ <br />
-$ ls .. | sort | wc & ls | wc & wc  <- All process at background; expect for last 'wc' which waits for input<br />
-      4       4      38<br />
-     24      24     234<br />
-^C<br />
-
+  $ 
+  $ ls .. | sort | wc & ls | wc & wc  <- All process at background; expect for last 'wc' which waits for input
+        4       4      38
+       24      24     234
+  ^C
+  ~~~
 4. "cd" ## for "cd" you will need to lookup the library routine "chdir" in the (online) unix manual
-
-$ ls <br />
-assert2.h  envrLib.h  mytoc.c  pipeLib.c  README.md  shell.h    strlib2.h    testShell.sh  vectorLib.h<br />
-envrLib.c  Makefile   mytoc.h  pipeLib.h  shell.c    strlib2.c  testLog.txt  vectorLib.c<br />
-$ cd ..<br />
-$ ls<br />
-LICENSE  README.md  shell  shellLabDemos<br />
-$ cd                      <- default is $HOME<br />
-$ ls
-Desktop  Documents  Downloads  Music  Pictures  Public  Templates  Videos<br />
-$ cd Documents/shell-jjpadillamendez/shell<br />
-$ ls<br />
-assert2.h  envrLib.h  mytoc.c  pipeLib.c  README.md  shell.h    strlib2.h    testShell.sh  vectorLib.h<br />
-envrLib.c  Makefile   mytoc.h  pipeLib.h  shell.c    strlib2.c  testLog.txt  vectorLib.c<br />
-$ exit<br />
-
+  ~~~
+  $ ls 
+  assert2.h  envrLib.h  mytoc.c  pipeLib.c  README.md  shell.h    strlib2.h    testShell.sh  vectorLib.h
+  envrLib.c  Makefile   mytoc.h  pipeLib.h  shell.c    strlib2.c  testLog.txt  vectorLib.c
+  $ cd ..
+  $ ls
+  LICENSE  README.md  shell  shellLabDemo
+  $ cd                      <- default is $HOME
+  $ ls
+  Desktop  Documents  Downloads  Music  Pictures  Public  Templates  Videos
+  $ cd Documents/shell-jjpadillamendez/shell
+  $ ls
+  assert2.h  envrLib.h  mytoc.c  pipeLib.c  README.md  shell.h    strlib2.h    testShell.sh  vectorLib.h
+  envrLib.c  Makefile   mytoc.h  pipeLib.h  shell.c    strlib2.c  testLog.txt  vectorLib.c
+  $ exit
+  ~~~
 ADDITIONAL FEATURES WERE ADDED 
 
 5. Redirecting input and output (e.g. $ ls > /tmp/files.txt).
-
-$ ls > test.txt
-$ cat test.txt
-LICENSE
-README.md
-shell
-shellLabDemos
-test.txt
-$ wc < test.txt
- 5  5 47
-$ ls | sort | wc > test.txt
-$ cat test.txt
-      5       5      47
-$ exit
-
+  ~~~
+  $ ls > test.txt
+  $ cat test.txt
+  LICENSE
+  README.md
+  shell
+  shellLabDemos
+  test.txt
+  $ wc < test.txt
+   5  5 47
+  $ ls | sort | wc > test.txt
+  $ cat test.txt
+        5       5      47
+  $ exit
+  ~~~
 6. Setting environment variables: "var=value".
-
-$ echo $PWD
-/home/student/Documents/shell-jjpadillamendez/shell
-$ PWD=$HOME
-$ echo $PWD
-/home/student
-$ exit
-
+  ~~~
+  $ echo $PWD
+  /home/student/Documents/shell-jjpadillamendez/shell
+  $ PWD=$HOME
+  $ echo $PWD
+  /home/student
+  $ exit
+  ~~~
 7. Expanding non-embedded environment variables (e.g. "echo $PATH").
-
-$ ls $HOME
-Desktop  Documents  Downloads  Music  Pictures  Public  Templates  Videos
-$ ls
-assert2.h  envrLib.h  mytoc.c  pipeLib.c  README.md  shell.h    strlib2.h    testShell.sh  vectorLib.c<br />
-envrLib.c  Makefile   mytoc.h  pipeLib.h  shell.c    strlib2.c  testLog.txt  test.txt      vectorLib.h<br />
-$ cd $HOME<br />
-$ ls<br />
-Desktop  Documents  Downloads  Music  Pictures  Public  Templates  Videos<br />
-$ exit<br />
-
+  ~~~
+  $ ls $HOME
+  Desktop  Documents  Downloads  Music  Pictures  Public  Templates  Videos
+  $ ls
+  assert2.h  envrLib.h  mytoc.c  pipeLib.c  README.md  shell.h    strlib2.h    testShell.sh  vectorLib.c
+  envrLib.c  Makefile   mytoc.h  pipeLib.h  shell.c    strlib2.c  testLog.txt  test.txt      vectorLib.h
+  $ cd $HOME
+  $ ls
+  Desktop  Documents  Downloads  Music  Pictures  Public  Templates  Videos
+  $ exit
+  ~~~
 8. Expanding embedded environment variables (e.g. "echo ${HOME}/bin"
-
-$ ls ${HOME}/Documents<br />
-shell-jjpadillamendez  tokenizer-lab-f17-jjpadillamendez<br />
-$ echo ${HOME}/Documents<br />
-/home/student/Documents<br />
-$ exit<br />
-
-9. Programs that cannot be exec'd or terminate with errors (non-zero exit codes) should be reported.<br />
-1. If the program terminated normally but with a return value different than zero the program will notify the user. Additionally, It will notify the user if the program terminated anormally e.g., when dividing by zero<br />
-
+  ~~~
+  $ ls ${HOME}/Documents
+  shell-jjpadillamendez  tokenizer-lab-f17-jjpadillamendez
+  $ echo ${HOME}/Documents
+  /home/student/Documents
+  $ exit
+  ~~~
+9. Programs that cannot be exec'd or terminate with errors (non-zero exit codes) should be reported.
+  ~~~
+  If the program terminated normally but with a return value different than zero the program will notify the user. Additionally, It will notify the user if the program terminated anormally e.g., when dividing by zero
+  ~~~
         
 Important Note: 
  <br />- If an absolute path is not specified, this shell will try to find it by default. First, it checks at the working directory and then, it tries to find the path using the $PATH environment variable.
