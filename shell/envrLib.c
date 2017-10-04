@@ -54,7 +54,8 @@ char **getEnvrVar(char **envr, char *var){
     for(i=0; envr[i]; i++){
         tokenVec = tokenize(envr[i], '=');           // tokenize each envr variable to check before '='
         if(strcomp(*tokenVec, var)){
-            varVec = tokenize(tokenVec[1], ':');     // create environment vector by tokenizing at ':'
+            if(tokenVec[1])
+                varVec = tokenize(tokenVec[1], ':');     // create environment vector by tokenizing at ':'
             freeVector(tokenVec);
             break;
         }
@@ -79,7 +80,8 @@ char *getEnvrVar2(char **envr, char *var){
     for(i=0; envr[i]; i++){
         tokenVec = tokenize(envr[i], '=');           // tokenize each envr variable to check before '='
         if(strcomp(*tokenVec, var)){
-            value = copystr(tokenVec[1]);            // return whole value as string
+            if(tokenVec[1])
+                value = copystr(tokenVec[1]);            // return whole value as string
             freeVector(tokenVec);
             break;
         }
