@@ -109,7 +109,7 @@ char **waitForUserCommand(char **envp){
     char *PS1 = getEnvrVar2(envp, "PS1");
     len = strlen2(PS1);
     
-    write(2, PS1, len+1);
+    write(1, PS1, len);
     len = read(0, str, BUFFERLIMIT);
     assert2(len < BUFFERLIMIT, "Limit of string length was overpassed");    
     
